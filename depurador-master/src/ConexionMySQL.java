@@ -1,5 +1,8 @@
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 
 public class ConexionMySQL {
@@ -17,6 +20,22 @@ public class ConexionMySQL {
 		catch(Exception e){
 			System.out.println(e.getMessage());
 		}
+		
+	}
+	
+	public void insert(){
+		
+	}
+	
+	public ResultSet consultar(String consulta){
+		 ResultSet resultado;
+	        try {
+	            Statement sentencia = con.createStatement();
+	            resultado = sentencia.executeQuery(consulta);
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	            return null;
+	        }        return resultado;
 		
 	}
 	
