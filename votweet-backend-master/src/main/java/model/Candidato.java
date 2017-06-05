@@ -1,54 +1,51 @@
 package model;
 
 import java.io.Serializable;
-import java.sql.Date;
+import javax.persistence.*;
+import java.util.Date;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
 
 /**
- * The persistent class for the actor database table.
+ * The persistent class for the candidato database table.
  * 
  */
 @Entity
 @Table(name="candidato")
 @NamedQueries({
-	@NamedQuery(name="eliminar candidato por id", query="DELETE FROM Candidato c WHERE c.cdtoId = :id")
+@NamedQuery(name="Candidato.findAll", query="SELECT c FROM Candidato c")
 })
 public class Candidato implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@Column(name="cdto_id", unique=true, nullable=false)
+	@Column(name="cdto_id", unique=true, nullable= false)
 	private int cdtoId;
+
+	@Column(name="cdto_activo")
+	private boolean cdtoActivo;
+
+	@Column(name="cdto_cuenta_twitter", length=255)
+	private String cdtoCuentaTwitter;
+
+	@Lob
+	@Column(name="cdto_descripcion")
+	private String cdtoDescripcion;
+
+	@Column(name="cdto_edad")
+	private int cdtoEdad;
+
+	@Temporal(TemporalType.DATE)
+	@Column(name="cdto_fecha_nacimiento")
+	private Date cdtoFechaNacimiento;
+
+	@Column(name="cdto_imagen")
+	private String cdtoImagen;
+
+	@Column(name="cdto_nombre")
+	private String cdtoNombre;
 
 	@Column(name="ptdo_id")
 	private int ptdoId;
-	
-	@Column(name="cdto_nombre",length=255)
-	private String cdtoNombre;
-	
-	@Column(name="cdto_cuenta_twitter",length=255)
-	private String cdtoCuentaTwitter;
-	
-	@Column(name="cdto_fecha_nacimiento")
-	private Date cdtoFechaNacimiento;
-	
-	@Column(name="cdto_edad")
-	private String cdtoEdad;
-	
-	@Column(name="cdto_descripcion")
-	private String cdtoDescripcion;
-	
-	@Column(name="cdto_imagen", length=255)
-	private String cdtoImagen;
-	
-	@Column(name="cdto_activo")
-	private boolean cdtoActivo;
 
 	public int getCdtoId() {
 		return cdtoId;
@@ -58,20 +55,12 @@ public class Candidato implements Serializable {
 		this.cdtoId = cdtoId;
 	}
 
-	public int getPtdoId() {
-		return ptdoId;
+	public boolean isCdtoActivo() {
+		return cdtoActivo;
 	}
 
-	public void setPtdoId(int ptdoId) {
-		this.ptdoId = ptdoId;
-	}
-
-	public String getCdtoNombre() {
-		return cdtoNombre;
-	}
-
-	public void setCdtoNombre(String cdtoNombre) {
-		this.cdtoNombre = cdtoNombre;
+	public void setCdtoActivo(boolean cdtoActivo) {
+		this.cdtoActivo = cdtoActivo;
 	}
 
 	public String getCdtoCuentaTwitter() {
@@ -82,28 +71,28 @@ public class Candidato implements Serializable {
 		this.cdtoCuentaTwitter = cdtoCuentaTwitter;
 	}
 
-	public Date getCdtoFechaNacimiento() {
-		return cdtoFechaNacimiento;
-	}
-
-	public void setCdtoFechaNacimiento(Date cdtoFechaNacimiento) {
-		this.cdtoFechaNacimiento = cdtoFechaNacimiento;
-	}
-
-	public String getCdtoEdad() {
-		return cdtoEdad;
-	}
-
-	public void setCdtoEdad(String cdtoEdad) {
-		this.cdtoEdad = cdtoEdad;
-	}
-
 	public String getCdtoDescripcion() {
 		return cdtoDescripcion;
 	}
 
 	public void setCdtoDescripcion(String cdtoDescripcion) {
 		this.cdtoDescripcion = cdtoDescripcion;
+	}
+
+	public int getCdtoEdad() {
+		return cdtoEdad;
+	}
+
+	public void setCdtoEdad(int cdtoEdad) {
+		this.cdtoEdad = cdtoEdad;
+	}
+
+	public Date getCdtoFechaNacimiento() {
+		return cdtoFechaNacimiento;
+	}
+
+	public void setCdtoFechaNacimiento(Date cdtoFechaNacimiento) {
+		this.cdtoFechaNacimiento = cdtoFechaNacimiento;
 	}
 
 	public String getCdtoImagen() {
@@ -114,13 +103,22 @@ public class Candidato implements Serializable {
 		this.cdtoImagen = cdtoImagen;
 	}
 
-	public boolean isCdtoActivo() {
-		return cdtoActivo;
+	public String getCdtoNombre() {
+		return cdtoNombre;
 	}
 
-	public void setCdtoActivo(boolean cdtoActivo) {
-		this.cdtoActivo = cdtoActivo;
+	public void setCdtoNombre(String cdtoNombre) {
+		this.cdtoNombre = cdtoNombre;
 	}
+
+	public int getPtdoId() {
+		return ptdoId;
+	}
+
+	public void setPtdoId(int ptdoId) {
+		this.ptdoId = ptdoId;
+	}
+
 	
-	
+
 }

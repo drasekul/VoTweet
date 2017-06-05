@@ -60,9 +60,7 @@ public class PartidoService {
 	@POST
     @Consumes({"application/xml", "application/json"})
     public String create(Partido entity) {
-		String respuesta;
-		partidoFacadeEJB.create(entity);
-		respuesta="Usuario creado con exito";
+		String respuesta=partidoFacadeEJB.create(entity);
 		return respuesta;
     }
 

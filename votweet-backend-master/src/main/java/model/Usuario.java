@@ -1,25 +1,17 @@
 package model;
 
 import java.io.Serializable;
+import javax.persistence.*;
 import java.sql.Timestamp;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
 
 /**
- * The persistent class for the actor database table.
+ * The persistent class for the usuario database table.
  * 
  */
 @Entity
 @Table(name="usuario")
-@NamedQueries({
-@NamedQuery(name="eliminar usuario por correo", query="DELETE FROM Usuario u WHERE u.usrCorreo = :correo"),
-@NamedQuery(name="encontrar usuario por correo", query="SELECT u FROM Usuario u WHERE u.usrCorreo = :correo")
-})
+@NamedQuery(name="Usuario.findAll", query="SELECT u FROM Usuario u")
 public class Usuario implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -27,60 +19,44 @@ public class Usuario implements Serializable {
 	@Column(name="usr_id", unique=true, nullable=false)
 	private int usrId;
 
-	@Column(name="cdto_id",nullable=false,unique=true)
-	private int cdtoId;
-	
-	@Column(name="usr_privilegio")
-	private int usrPrivilegio;
-	
-	@Column(name="usr_nombre",length=255)
-	private String usrNombre;
-	
-	@Column(name="usr_apellido",length=255)
-	private String usrApellido;
-	
-	@Column(name="usr_correo",length=255,unique=true)
-	private String usrCorreo;
-	
-	@Column(name="usr_password",length=255)
-	private String usrPassword;
-	
 	@Column(name="usr_activo")
 	private boolean usrActivo;
-	
+
+	@Column(name="usr_apellido", length=255)
+	private String usrApellido;
+
+	@Column(name="usr_correo",length=255, unique=true)
+	private String usrCorreo;
+
 	@Column(name="usr_fecha_registro")
 	private Timestamp usrFechaRegistro;
+
+	@Column(name="usr_nombre",length=255)
+	private String usrNombre;
+
+	@Column(name="usr_password",length=255)
+	private String usrPassword;
+
+	@Column(name="usr_privilegio")
+	private int usrPrivilegio;
+
+	@Column(name="cdto_id")
+	private int cdtoId;
 
 	public int getUsrId() {
 		return usrId;
 	}
 
-	public void setUsrId(int userId) {
-		this.usrId = userId;
+	public void setUsrId(int usrId) {
+		this.usrId = usrId;
 	}
 
-	public int getCdtoId() {
-		return cdtoId;
+	public boolean isUsrActivo() {
+		return usrActivo;
 	}
 
-	public void setCdtoId(int cdtoId) {
-		this.cdtoId = cdtoId;
-	}
-
-	public int getUsrPrivilegio() {
-		return usrPrivilegio;
-	}
-
-	public void setUsrPrivilegio(int usrPrivilegio) {
-		this.usrPrivilegio = usrPrivilegio;
-	}
-
-	public String getUsrNombre() {
-		return usrNombre;
-	}
-
-	public void setUsrNombre(String usrNombre) {
-		this.usrNombre = usrNombre;
+	public void setUsrActivo(boolean usrActivo) {
+		this.usrActivo = usrActivo;
 	}
 
 	public String getUsrApellido() {
@@ -99,6 +75,22 @@ public class Usuario implements Serializable {
 		this.usrCorreo = usrCorreo;
 	}
 
+	public Timestamp getUsrFechaRegistro() {
+		return usrFechaRegistro;
+	}
+
+	public void setUsrFechaRegistro(Timestamp usrFechaRegistro) {
+		this.usrFechaRegistro = usrFechaRegistro;
+	}
+
+	public String getUsrNombre() {
+		return usrNombre;
+	}
+
+	public void setUsrNombre(String usrNombre) {
+		this.usrNombre = usrNombre;
+	}
+
 	public String getUsrPassword() {
 		return usrPassword;
 	}
@@ -107,19 +99,22 @@ public class Usuario implements Serializable {
 		this.usrPassword = usrPassword;
 	}
 
-	public boolean isUsrActivo() {
-		return usrActivo;
+	public int getUsrPrivilegio() {
+		return usrPrivilegio;
 	}
 
-	public void setUsrActivo(boolean usrActivo) {
-		this.usrActivo = usrActivo;
+	public void setUsrPrivilegio(int usrPrivilegio) {
+		this.usrPrivilegio = usrPrivilegio;
 	}
 
-	public Timestamp getUsrFechaRegistro() {
-		return usrFechaRegistro;
+	public int getCdtoId() {
+		return cdtoId;
 	}
 
-	public void setUsrFechaRegistro(Timestamp usrFechaRegistro) {
-		this.usrFechaRegistro = usrFechaRegistro;
+	public void setCdtoId(int cdtoId) {
+		this.cdtoId = cdtoId;
 	}
+
+	
+
 }

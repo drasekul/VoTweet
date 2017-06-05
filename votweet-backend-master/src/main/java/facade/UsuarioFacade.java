@@ -2,11 +2,13 @@ package facade;
 
 import java.util.List;
 
-import model.Usuario;
+import javax.ejb.Local;
 
+import model.Usuario;
+@Local
 public interface UsuarioFacade {
 	
-	public void create(Usuario entity);
+	public String create(Usuario entity);
 
 	public void edit(Usuario entity);
 
@@ -20,8 +22,9 @@ public interface UsuarioFacade {
 
 	public int count();
 	
-	public void eliminarUsuarioId(Object id);
+	//public void eliminarUsuarioId(Object id);
 	
-	public void eliminarUsuarioCorreo(Object correo);
+	//public void eliminarUsuarioCorreo(Object correo);
+	//public List<Usuario> encontrarUsuarioPorCorreo(String correo);
 	
 }
