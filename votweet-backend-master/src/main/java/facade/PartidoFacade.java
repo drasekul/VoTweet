@@ -6,7 +6,7 @@ import model.Partido;
 
 public interface PartidoFacade {
 	
-	public void create(Partido entity);
+	public String create(Partido entity);
 
 	public void edit(Partido entity);
 
@@ -20,5 +20,5 @@ public interface PartidoFacade {
 
 	public int count();
 	
-	public void eliminarPartidoId(Object id);
+	//public void eliminarPartidoId(Object id);
 }

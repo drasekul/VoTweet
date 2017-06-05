@@ -1,6 +1,9 @@
+import java.util.ArrayList;
+
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.MongoClient;
+import com.mongodb.ServerAddress;
 
 public class ConexionMongoDB {
 	public  MongoClient cliente=null;
@@ -21,7 +24,7 @@ public class ConexionMongoDB {
 	 public static MongoClient crearConexion() {
 	    	MongoClient mongo = null;
 	        try {
-	            mongo = new MongoClient("localhost", 27017);
+	            mongo = new MongoClient("localhost",27017);
 	        } catch (Exception e) {
 	            e.printStackTrace();
 	        }

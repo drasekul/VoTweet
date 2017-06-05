@@ -6,7 +6,7 @@ import model.Candidato;
 
 public interface CandidatoFacade {
 	
-	public void create(Candidato entity);
+	public String create(Candidato entity);
 
 	public void edit(Candidato entity);
 
@@ -20,5 +20,5 @@ public interface CandidatoFacade {
 
 	public int count();
 	
-	public void eliminarCandidatoId(Object id);
+	//public void eliminarCandidatoId(Object id);
 }

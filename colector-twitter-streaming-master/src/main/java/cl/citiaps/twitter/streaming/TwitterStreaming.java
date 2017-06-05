@@ -12,6 +12,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
@@ -30,6 +31,7 @@ import com.google.maps.model.LatLng;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
 
@@ -351,6 +353,7 @@ public class TwitterStreaming {
 		}
 	*/
 	private void almacenarTweet(Status status){
+		//Se abre el archivo que contiene las ciudades de Chile
 		File archivo= new File("C:\\Users\\Abraham\\Desktop\\ciudades de Chile.txt");
 		try{
 			FileReader fr = new FileReader (archivo);
@@ -359,6 +362,66 @@ public class TwitterStreaming {
 		catch(Exception e){
 			System.out.println(e.getMessage());
 		}
+		//Se verifica si el status (tweet) es un retweet o no
+		//Si es un retweet
+		if(status.isRetweet()){
+			System.out.println("Soy un rt");
+			//Se busca el tweet retuiteado en la base de datos mongo, por meido de su id
+			long id = status.getRetweetedStatus().getId();
+			BasicDBObject tweet = new BasicDBObject();
+			tweet.put("id", id);
+			DBCursor cursorBusqueda = tweets.find(tweet);
+			//Si dicho tweet no esta en la base de datos
+			if(cursorBusqueda.hasNext()== false){
+				//Se agrega ese en vez del retweet que no apporta ningun dato
+				System.out.println("Lo que se rt no estaba en la bd");
+				Status auxStatus = status.getRetweetedStatus();
+				status= auxStatus;
+			}
+			//Si no, significa que si esta, por lo tanto se actualizan los datos de ese tweet
+			else{
+				//Se construye un objeto de actualizacion con los mismo parametros que tenia el antiguo,
+				//Solo cambiando la cantidad de retweets y likes del tweet
+				System.out.println("Lo que se rt si estaba en la bd, actualizando");
+				BasicDBObject update = new BasicDBObject();
+				update.append("fav_count", status.getRetweetedStatus().getFavoriteCount());
+				update.append("retweet_count", status.getRetweetedStatus().getRetweetCount());
+				/*
+				update.put("id", cursorBusqueda.next().get("id"));
+				update.put("text", cursorBusqueda.next().get("text"));
+				update.put("fav_count", status.getRetweetedStatus().getFavoriteCount());
+				update.put("retweet_count", status.getRetweetedStatus().getRetweetCount());
+				update.put("is_retweeted", cursorBusqueda.next().get("is_retweeted"));
+				update.put("created_at", cursorBusqueda.next().get("created_at"));
+				update.put("is_retweet", cursorBusqueda.next().get("is_retweet"));
+				update.put("rt_id", cursorBusqueda.next().get("rt_id"));
+				update.put("rt_retweet_count", cursorBusqueda.next().get("rt_retweet_count"));
+				update.put("rt_fav_count", cursorBusqueda.next().get("rt_fav_count"));
+				update.put("in_reply_to_user_screen_name", cursorBusqueda.next().get("in_reply_to_user_screen_name"));
+				update.put("in_reply_to_user_id", cursorBusqueda.next().get("in_reply_to_user_id"));
+				update.put("withheld_in_countries", cursorBusqueda.next().get("withheld_in_countries"));
+				update.put("is_truncated", cursorBusqueda.next().get("is_truncated"));
+				update.put("is_possibly_sensitive", cursorBusqueda.next().get("is_possibly_sensitive"));
+				update.put("lang", cursorBusqueda.next().get("lang"));
+				update.put("user_id", cursorBusqueda.next().get("user_id"));
+				update.put("user_screen_name", cursorBusqueda.next().get("user_screen_name"));
+				update.put("user_name", cursorBusqueda.next().get("user_name"));
+				update.put("user_location", cursorBusqueda.next().get("user_location"));
+				update.put("user_followers_count",cursorBusqueda.next().get("user_followers_count"));
+				update.put("user_fav_count", cursorBusqueda.next().get("user_fav_count"));
+				update.put("others_users_mentions", cursorBusqueda.next().get("other_users_mentions"));
+				update.put("country_location", cursorBusqueda.next().get("country_location"));
+				update.put("region_location", cursorBusqueda.next().get("rt_fav_count"));
+				update.put("city_location", cursorBusqueda.next().get("rt_fav_count"));
+				*/
+				//Hay que ver si era necesario especificar todos los parametros de nuevo
+				//En la actualización del documento
+				tweets.updateMulti(tweet, new BasicDBObject("$set",update));
+				//Una vez que se actualiza se retorna para detener la ejecucion
+				return;
+			}
+			
+		}
 		BasicDBObject documento = new BasicDBObject();
 		documento.put("id", status.getId());
 		documento.put("text", status.getText());
@@ -366,8 +429,9 @@ public class TwitterStreaming {
 		documento.put("fav_count", status.getFavoriteCount());
 		documento.put("retweet_count", status.getRetweetCount());
 		documento.put("is_retweeted", status.isRetweeted());
-		documento.put("created_at", status.getCreatedAt().toString());
-		documento.put("is_retweet", status.isRetweet());
+		documento.put("created_at", new Timestamp(status.getCreatedAt().getTime()).toString());
+		//documento.put("is_retweet", status.isRetweet());
+		/*
 		if(status.isRetweet()){
 			Status rt= status.getRetweetedStatus();
 			documento.put("rt_id", rt.getId());
@@ -375,12 +439,14 @@ public class TwitterStreaming {
 			documento.put("rt_fav_count", rt.getFavoriteCount());
 		}
 		else{
-			documento.put("rt_id",-1);
+			documento.put("rt_id",(long)-1);
 			documento.put("rt_retweet_count",-1);
 			documento.put("rt_fav_count",-1);
 		}
+		*/
 		documento.put("in_reply_to_user_screen_name",status.getInReplyToScreenName());
 		documento.put("in_reply_to_user_id", status.getInReplyToUserId());
+		documento.put("in_reply_to_status_id", status.getInReplyToStatusId());
 		documento.put("withheld_in_countries",status.getWithheldInCountries());
 		documento.put("is_truncated", status.isTruncated());
 		documento.put("is_possibly_sensitive", status.isPossiblySensitive());
@@ -393,7 +459,7 @@ public class TwitterStreaming {
 			documento.put("user_location", user.getLocation().toString());
 		}
 		else{
-			documento.put("user_location", "null");
+			documento.put("user_location", "none");
 		}
 		documento.put("user_followers_count", user.getFollowersCount());
 		documento.put("user_fav_count", user.getFavouritesCount());
@@ -411,11 +477,10 @@ public class TwitterStreaming {
 			documento.put("others_users_mentions",menciones);
 		}
 		else{
-			documento.put("others_users_mentions", "null");
+			documento.put("others_users_mentions", "none");
 		}
 		if(status.getPlace()!=null){
 			if(status.getPlace().getFullName()!=null){
-				int nacional =0;
 				ArrayList<ArrayList<String>> listaCiudadesChile= leerArchivo();
 				 for (int i=0; i < listaCiudadesChile.size(); i++){
 				 	for(int j=0; j < listaCiudadesChile.get(i).size(); j++){
@@ -425,27 +490,20 @@ public class TwitterStreaming {
 				 			documento.put("country_location", "Chile");
 				 			documento.put("region_location", listaCiudadesChile.get(i).get(0));
 				 			documento.put("city_location",listaCiudadesChile.get(i).get(1));
-				 			nacional=1;
+				 			tweets.insert(documento);
+				 			return;
 				 		}
 				 	}
 				 }
-				 if(nacional==0 && (status.getPlace().getFullName().indexOf("Chile")!= -1 || status.getPlace().getFullName().indexOf("CHILE")!= -1 || status.getPlace().getFullName().indexOf("chile")!= -1)){
-					 documento.put("country_location", "Chile");
-					 documento.put("region_location","null");
-					 documento.put("citi_location", "null");
-					 nacional=1;
-				 }
-				 //Si nacional es 0, significa que el tweet no es nacional
-				 else if(nacional==0){
-					documento.put("country_location", "Extranjero");
-			 		documento.put("region_location", "Extranjero");
-			 		documento.put("city_location","Extranjero");
-				 }
+				 //Si la ejecucion llega a este punto, significa que el tweet no es de Chile
+				documento.put("country_location", "Extranjero");
+			 	documento.put("region_location", "Extranjero");
+			 	documento.put("city_location","Extranjero");
 			}
 			else{
-				documento.put("country_location", "null");
-				documento.put("region_location", "null");
-				documento.put("city_location", "null");
+				documento.put("country_location", "none");
+				documento.put("region_location", "none");
+				documento.put("city_location", "none");
 				//System.out.println("sin localizacion");
 			}
 		}
@@ -454,7 +512,6 @@ public class TwitterStreaming {
 			if(location != null){
 				//documento.put("user_location",location.toString());
 				System.out.println("user_location: "+location.toString());
-				int nacional=0;
 				ArrayList<ArrayList<String>> listaCiudadesChile= leerArchivo();
 				 for (int i=0; i < listaCiudadesChile.size(); i++){
 				 	for(int j=0; j < listaCiudadesChile.get(i).size(); j++){
@@ -465,30 +522,24 @@ public class TwitterStreaming {
 				 			documento.put("country_location", "Chile");
 				 			documento.put("region_location", listaCiudadesChile.get(i).get(0));
 				 			documento.put("city_location",listaCiudadesChile.get(i).get(1));
-				 			nacional=1;
+				 			tweets.insert(documento);
+				 			return;
 				 		}
 				 	}
 				 }
-				 if(nacional==0 &&(location.indexOf("Chile")!=-1 || location.indexOf("CHILE")!=-1 || location.indexOf("chile")!=-1)){
-					 documento.put("country_location", "Chile");
-					 documento.put("region_location", "null");
-					 documento.put("city_location", "null");
-					 nacional=1;
-				 }
-				 //Si nacional es 0, significa que el tweet no es nacional
-				 else if(nacional==0){
-					documento.put("country_location", "Extranjero");
-			 		documento.put("region_location", "Extranjero");
-			 		documento.put("city_location","Extranjero");
-				 }
+				 //Si la ejecucion llega a este punto, significa que no es de Chile el tweet
+				documento.put("country_location", "Extranjero");
+			 	documento.put("region_location", "Extranjero");
+			 	documento.put("city_location","Extranjero");
 			}
 			else{
-				documento.put("country_location", "null");
-				documento.put("region_location", "null");
-				documento.put("city_location", "null");
+				documento.put("country_location", "none");
+				documento.put("region_location", "none");
+				documento.put("city_location", "none");
 				//System.out.println("sin localizacion");
 			}
 		}
 		tweets.insert(documento);
+		
 	}
 	}

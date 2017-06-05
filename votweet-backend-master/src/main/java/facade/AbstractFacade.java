@@ -3,8 +3,11 @@ package facade;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
+
+import javax.persistence.EntityExistsException;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
+import javax.persistence.TransactionRequiredException;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -27,9 +30,28 @@ public abstract class AbstractFacade<T> {
 
     protected abstract EntityManager getEntityManager();
 
-    public void create(T entity) {
-        getEntityManager().persist(entity);
-    }
+    public String create(T entity) {
+    	String res=null;
+    	try{
+    		getEntityManager().persist(entity);
+    		res ="creado";
+    		return res;
+    	}catch(EntityExistsException e1){
+    		res="existe";
+    		return res;
+    	}
+    	/*catch(IllegalArgumentException e2){
+    		res=e2.toString();
+    		return res;
+    	}
+    	*/
+    	catch(TransactionRequiredException e3){
+    		res="errorTransaccion";
+    		return res;
+    	}
+    		
+    	}
+        
 
     public void edit(T entity) {
         getEntityManager().merge(entity);
@@ -98,7 +120,7 @@ public abstract class AbstractFacade<T> {
 		}
     
    */
-    
+    /*
     public void eliminarUsuarioId(Object id){
     	EntityManager em = getEntityManager();
     	Query q = em.createNamedQuery("eliminar usuario por id");
@@ -127,8 +149,16 @@ public abstract class AbstractFacade<T> {
     	q.executeUpdate();
     }
     
-
-    
+*/
+    /*
+    @SuppressWarnings("unchecked")
+	public List<T> encontrarUsuarioPorCorreo(String correo){
+    	EntityManager em = getEntityManager();
+    	Query q = em.createNamedQuery("encontrar usuario por correo");
+    	q.setParameter("correo", correo);
+    	return q.getResultList();
+    }
+    */
     
     
 }

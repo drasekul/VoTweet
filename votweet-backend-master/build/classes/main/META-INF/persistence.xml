@@ -5,5 +5,11 @@
 	<persistence-unit name="votweetPU" transaction-type="JTA">
 		<jta-data-source>jdbc/votweet</jta-data-source>
 		<class>model.Usuario</class>
+		<class>model.Candidato</class>
+		<class>model.Keyword</class>
+		<class>model.Partido</class>
+		<class>model.Metrica</class>
+		<class>model.Opinion</class>
+		<class>model.CandidatoMetrica</class>
 	</persistence-unit>
 </persistence>

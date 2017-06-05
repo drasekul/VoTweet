@@ -60,23 +60,9 @@ public class UsuarioService {
 	@POST
     @Consumes({"application/xml", "application/json"})
     public String create(Usuario entity) {
-		String respuesta;
-		boolean esta=false;
-		List<Usuario> usuarios = usuarioFacadeEJB.findAll();
-		for(int i=0 ; i < usuarios.size(); i++){
-			if(usuarios.get(i).getUsrCorreo().equals(entity.getUsrCorreo())){
-				esta=true;
-			}
-		}
-		if(esta==true){
-			respuesta="Un usuario con ese correo ya existe en la base de datos";
-			return respuesta;
-		}
-		else{
-			usuarioFacadeEJB.create(entity);
-			respuesta="Usuario creado con exito";
-			return respuesta;
-		}
+		String respuesta = usuarioFacadeEJB.create(entity);
+		return respuesta;
+		
     }
 
     @PUT
