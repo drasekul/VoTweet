@@ -13,7 +13,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 
-
+import model.CandidatoMetrica;
 import model.Usuario;
 /**
  * 
@@ -160,5 +160,13 @@ public abstract class AbstractFacade<T> {
     }
     */
     
-    
+    /*
+    @SuppressWarnings("unchecked")
+	public List<CandidatoMetrica> findByCdtoId(int idCandidato){
+    	EntityManager em = getEntityManager();
+    	Query q = em.createNamedQuery("CandidatoMetrica.findByCdtoId()");
+    	q.setParameter("idCandidato", idCandidato);
+    	return q.getResultList();
+    }
+    */
 }

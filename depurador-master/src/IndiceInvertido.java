@@ -57,6 +57,8 @@ public class IndiceInvertido {
 			config.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
 			IndexWriter writer = new IndexWriter(indexDirectory,config);
 			DBObject tweet = cursor.next();
+			//contador para relizar pruebas, con 200 documentos!!!
+			//int contador=0;
 			while(cursor.hasNext()){
 				long id = (long) tweet.get("id");
 				int fav_count = (int) tweet.get("fav_count");
@@ -65,8 +67,9 @@ public class IndiceInvertido {
 				String country_location =tweet.get("country_location").toString();
 				/*System.out.println("tweet: "+contador);
 				System.out.println(text);
-				contador++;
+				 contador++;
 				*/
+				
 				String region_location = tweet.get("region_location").toString();
 				String city_location = tweet.get("city_location").toString();
 				String created_at = tweet.get("created_at").toString();

@@ -46,6 +46,19 @@ public class Candidato implements Serializable {
 
 	@Column(name="ptdo_id")
 	private int ptdoId;
+	
+	@Column(name="urlInicio")
+	private String urlInicio;
+	
+	
+
+	public String getUrlInicio() {
+		return urlInicio;
+	}
+
+	public void setUrlInicio(String urlInicio) {
+		this.urlInicio = urlInicio;
+	}
 
 	public int getCdtoId() {
 		return cdtoId;

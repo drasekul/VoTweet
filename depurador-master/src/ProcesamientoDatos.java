@@ -1,5 +1,6 @@
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -20,11 +21,12 @@ public class ProcesamientoDatos {
 	private JsonArray nodos;
 	private JsonArray links;
 	private static final String nombreArchivoSentimiento="C:\\Users\\Abraham\\Desktop\\Sentimientos.txt";
+	private static final String nombreArchivoRegionesCiudades="C:\\Users\\Abraham\\Desktop\\ciudades de Chile.txt";
 	
 	public ProcesamientoDatos(){
 		cmsql= new ConexionMySQL("root", "speeddemon1");
 		indice= new IndiceInvertido();
-		neo4j= new ConexionNeo4j("neo4j", "speeddemon1");
+		//neo4j= new ConexionNeo4j("neo4j", "speeddemon1");
 		System.out.println("cantidad de documentos: "+String.valueOf(indice.cantidadDocumentos));
 		nodos= new JsonArray();
 		links= new JsonArray();
@@ -40,6 +42,14 @@ public class ProcesamientoDatos {
 	
 	//metodo que crea todas las opiniones de todos los candidatos en la base de datos mysql
 	public void crearOpinionesMetricasTodosCandidatos(){
+		//Se calcula la aprobacion de cada candidato por region
+		//Para eso se cargan las regiones y cciudades de chile desde el archivo de texto
+		//Que es el mismo que es usado para la geolocalizacion heuristica de los tweets
+		String[] regiones;
+		String[] ciudades;
+		ArrayList<String[]> regionesCiudades=cargarRegionesCiudades(nombreArchivoRegionesCiudades);
+		regiones= regionesCiudades.get(0);
+		ciudades= regionesCiudades.get(1);
 		//Se obtienen los ids de los candidatos en el sistema
 		int[] idsCandidatos =cmsql.obtenerIdsCandidatos();
 		//Para cada uno de los ids de los candidatos
@@ -48,14 +58,17 @@ public class ProcesamientoDatos {
 			crearOpinionesCandidato(idsCandidatos[i]);
 		}
 		//double total=0;
-		//una vez creadas las opiniones, se procede a calcular las aprobaciones de cada uno de los candidatos
+		//una vez creadas las opiniones, se procede a calcular las aprobaciones y desaprobaciones de cada uno de los candidatos
 		for(int i=0;i < idsCandidatos.length;i++){
 			double aprob= calcularAprobacionNacional(idsCandidatos[i]);
+			double desaprob=calcularDesaprobacionNacional(idsCandidatos[i]);
 			//total=total+aprob;
 			System.out.println("La aprobacion del candidato: "+idsCandidatos[i]+" es: "+aprob);
+			System.out.println("La desaprobacion del candidato: "+idsCandidatos[i]+" es: "+desaprob);
 			Date date= new Date();
 	    	long miliseg= date.getTime();
 	    	Timestamp fechaCreacionAprobacion = new Timestamp(miliseg);
+	    	//Se deben insertar las aprobaciones nacionales de cada candidato en forma de metricas en la bd mysql
 			int confirmacion = cmsql.insertarMetrica("Aprobacion Nacional", aprob, fechaCreacionAprobacion, idsCandidatos[i]);
 			if(confirmacion==1){
 				System.out.println("Se ha calculado con exito la aprobacion nacional para el candidato: "+idsCandidatos[i]);
@@ -66,10 +79,84 @@ public class ProcesamientoDatos {
 			else{
 				System.out.println("Error en la insercion de la aprobacion a la base de datos");
 			}
+			//Se deben insertar las desaprobaciones nacionales de cada candidato en forma de metricas en la bd mysql
+			int confirmacionDes = cmsql.insertarMetrica("Desaprobacion Nacional", desaprob, fechaCreacionAprobacion, idsCandidatos[i]);
+			if(confirmacionDes==1){
+				System.out.println("Se ha calculado con exito la desaprobacion nacional para el candidato: "+idsCandidatos[i]);
+			}
+			else if(confirmacionDes==2){
+				System.out.println("Se calculo la desaprobacion para el candidato: "+idsCandidatos[i] +", pero no se pudo establecer la relacion");
+			}
+			else{
+				System.out.println("Error en la insercion de la desaprobacion a la base de datos");
+			}
+			//se debe calcular la aprobacion y desaprobacion de un candidato en cada region
+			for(int j=0; j < regiones.length; j++){
+				double aprobacionRegional = calcularAprobacionRegional(idsCandidatos[i], regiones[j]);
+				double desaprobacionRegional = calcularDesaprobacionRegional(idsCandidatos[i], regiones[j]);
+				System.out.println("La aprobacion del candidato: "+idsCandidatos[i]+", en la region: "+regiones[j]+", es: "+aprobacionRegional);
+				System.out.println("La desaprobacion del candidato: "+idsCandidatos[i]+", en la region: "+regiones[j]+", es: "+desaprobacionRegional);
+				Date dateReg= new Date();
+		    	long milisegReg= dateReg.getTime();
+		    	Timestamp fechaCreacionAprobacionReg = new Timestamp(milisegReg);
+		    	//Se deben insertar las aprobaciones regionales de cada candidato en forma de metricas en la bd mysql
+				int confirmacionReg = cmsql.insertarMetrica("Aprobacion Region "+regiones[j], aprobacionRegional, fechaCreacionAprobacionReg, idsCandidatos[i]);
+				if(confirmacionReg==1){
+					System.out.println("Se ha calculado con exito la aprobacion para el candidato: "+idsCandidatos[i]+", en la region: "+regiones[j]);
+				}
+				else if(confirmacionReg==2){
+					System.out.println("Se calculo la aprobacion para el candidato: "+idsCandidatos[i] +", en la region: "+regiones[j]+" pero no se pudo establecer la relacion");
+				}
+				else{
+					System.out.println("Error en la insercion de la aprobacion regional a la base de datos");
+				}
+				//Se deben insertar las desaprobaciones regionales de cada candidato en forma de metricas en la bd mysql
+				int confirmacionRegDes = cmsql.insertarMetrica("Desaprobacion Region "+regiones[j], desaprobacionRegional, fechaCreacionAprobacionReg, idsCandidatos[i]);
+				if(confirmacionRegDes==1){
+					System.out.println("Se ha calculado con exito la desaprobacion para el candidato: "+idsCandidatos[i]+", en la region: "+regiones[j]);
+				}
+				else if(confirmacionRegDes==2){
+					System.out.println("Se calculo la desaprobacion para el candidato: "+idsCandidatos[i] +", en la region: "+regiones[j]+" pero no se pudo establecer la relacion");
+				}
+				else{
+					System.out.println("Error en la insercion de la desaprobacion regional a la base de datos");
+				}
+			}
+			
+			//se debe calcular la aprobacion y desaprobacion de un candidato en cada ciudad
+			for(int j=0; j < ciudades.length; j++){
+				double aprobacionCiudad = calcularAprobacionCiudad(idsCandidatos[i], ciudades[j]);
+				double desaprobacionCiudad = calcularDesaprobacionCiudad(idsCandidatos[i], ciudades[j]);
+				System.out.println("La aprobacion del candidato: "+idsCandidatos[i]+", en la ciudad: "+ciudades[j]+", es: "+aprobacionCiudad);
+				System.out.println("La desaprobacion del candidato: "+idsCandidatos[i]+", en la ciudad: "+ciudades[j]+", es: "+desaprobacionCiudad);
+				Date dateCiudad= new Date();
+		    	long milisegCiudad= dateCiudad.getTime();
+		    	Timestamp fechaCreacionAprobacionCiudad = new Timestamp(milisegCiudad);
+		    	//Se deben insertar las aprobaciones por ciudad de cada candidato en forma de metricas en la bd mysql
+				int confirmacionCiudad = cmsql.insertarMetrica("Aprobacion Ciudad "+ciudades[j], aprobacionCiudad, fechaCreacionAprobacionCiudad, idsCandidatos[i]);
+				if(confirmacionCiudad==1){
+					System.out.println("Se ha calculado con exito la aprobacion para el candidato: "+idsCandidatos[i]+", en la ciudad: "+ciudades[j]);
+				}
+				else if(confirmacionCiudad==2){
+					System.out.println("Se calculo la aprobacion para el candidato: "+idsCandidatos[i] +", en la ciudad: "+ciudades[j]+" pero no se pudo establecer la relacion");
+				}
+				else{
+					System.out.println("Error en la insercion de la aprobacion por ciudad a la base de datos");
+				}
+				//Se deben insertar las desaprobaciones por ciudad de cada candidato en forma de metricas en la bd mysql
+				int confirmacionCiudadDes = cmsql.insertarMetrica("Desaprobacion Ciudad "+ciudades[j], desaprobacionCiudad, fechaCreacionAprobacionCiudad, idsCandidatos[i]);
+				if(confirmacionCiudadDes==1){
+					System.out.println("Se ha calculado con exito la desaprobacion para el candidato: "+idsCandidatos[i]+", en la ciudad: "+ciudades[j]);
+				}
+				else if(confirmacionCiudadDes==2){
+					System.out.println("Se calculo la desaprobacion para el candidato: "+idsCandidatos[i] +", en la ciudad: "+ciudades[j]+" pero no se pudo establecer la relacion");
+				}
+				else{
+					System.out.println("Error en la insercion de la desaprobacion por ciudad a la base de datos");
+				}
+			}
 		}
 		//System.out.println("total: "+total);
-		//Se deben insertar las aprobaciones nacionales de cada candidato en forma de metricas en la bd mysql
-		
 	}
 	
 	
@@ -217,65 +304,62 @@ public class ProcesamientoDatos {
 		File archivo= new File(nombreArchivoSentimiento);
 		int cantidadPalabrasPositivas=0;
 		int cantidadPalabrasNegativas=0;
+		ArrayList<String> coincidencias = new ArrayList<String>();
 		try{
 			FileReader fr = new FileReader (archivo);
 			BufferedReader br = new BufferedReader(fr);
 			String linea = br.readLine();
+			boolean espacios=false;
+			String palabraComparacion=null;
 			while(linea!=null){
-				String palabraComparacion=null;
+				palabraComparacion=null;
+				espacios=false;
 				//se debe armar la palabra sin los guiones bajos para encontrarla dentro del texto
-				//campos contiene: en la primera posicion la palabra con guiones
+				//campos contiene: en la primera posicion la palabra o termino en cuestio con guiones( si es que tiene)
 				//y en la segunda si es positive o negative
 				String[] campos = linea.split(" ");
-				//palabra contiene el intento de separacion de la palabra por guiones bajos
-				//En caso de que no se pueda separar, solo se retorna la misma palabra que es
-				//Una sola sin guiones
-				//String[] palabra =  campos[0].split("_");
-				//Si la palabra tiene al menos un guin bajo
+				//Si la palabra o termino tiene al menos un guin bajo
 				if(campos[0].indexOf("_")!=-1){
+					//Se reemplazan por espacios
 					palabraComparacion = campos[0].replace("_", " ");
+					espacios=true;
 				}
 				//sino
 				else{
 					//la palabra es igual a la que se leyo del archivo
 					palabraComparacion=campos[0];
 				}
-				/*
-				//Si palabra no es igual a la palabra con guiones, es decir, si se separo
-				//eso quiere decir que es mas de un palabra y es una frase
-				//Por lo que se debe armar
-				if(!palabra.equals(campos[0])){
-					for(int i=0; i < palabra.length; i++){
-						//Si no es la ultima palabra a agregar
-						//Se agrega la palabra mas un espacio
-						if(i!=palabra.length-1){
-						palabraComparacion=palabraComparacion+palabra[i]+" ";
-						}
-						//Sino, si es la ultima palabra, se agrega solo la palabra y no el espacio
-						else{
-							palabraComparacion= palabraComparacion+palabra[i];
+				if(espacios==false){
+					//Si la palabra no tiene espacios, se separa el texto para comparar palabra
+					//a palabra
+					String[] palabrasTexto= text.split(" ");
+					for(int i=0; i < palabrasTexto.length; i++){
+						//System.out.println(palabrasTexto[i]);
+						if(palabrasTexto[i].equals(palabraComparacion)&& coincidencias.indexOf(palabraComparacion)==-1){
+							System.out.println("Se encontro la palabra: "+palabraComparacion+" en el texto");
+							coincidencias.add(palabraComparacion);
+							if(campos[1].equals("positive")){
+								cantidadPalabrasPositivas=cantidadPalabrasPositivas+1;
+							}
+							else{
+								//Si no, es negative y es 0
+								cantidadPalabrasNegativas=cantidadPalabrasNegativas+1;
+							}
 						}
 					}
 				}
-				*/
-				//Sino, significa que la palabra es una sola, por lo que esa sera la palabra
-				//A buscar en el texto del tweet
-				/*else{
-					//Se asigna a la palabra como la misma que se leyo del archivo
-					palabraComparacion=campos[0];
-				}*/
-				//Si la palabra de comparacion o a buscar en el texto
-				//Esta en el texto, se clasifica segun lo que dice el archivo(positive o negative)
-				//System.out.println("palabra formada: "+palabraComparacion);
-				if(text.indexOf(palabraComparacion)!=-1){
-					// 1 es positive
-					//System.out.println("Se encontro la palabra: "+palabraComparacion+" en el texto");
-					if(campos[1].equals("positive")){
-						cantidadPalabrasPositivas=cantidadPalabrasPositivas+1;
-					}
-					else{
-						//Si no, es negative y es 0
-						cantidadPalabrasNegativas=cantidadPalabrasNegativas+1;
+				else{
+					if(text.indexOf(palabraComparacion)!=-1 && coincidencias.indexOf(palabraComparacion)==-1){
+						coincidencias.add(palabraComparacion);
+						// 1 es positive
+						System.out.println("Se encontro la palabra: "+palabraComparacion+" en el texto");
+						if(campos[1].equals("positive")){
+							cantidadPalabrasPositivas=cantidadPalabrasPositivas+1;
+						}
+						else{
+							//Si no, es negative y es 0
+							cantidadPalabrasNegativas=cantidadPalabrasNegativas+1;
+						}
 					}
 				}
 				linea=br.readLine();
@@ -290,7 +374,7 @@ public class ProcesamientoDatos {
 					int random = (int) Math.floor(Math.random()*(1-0+1)+0);  // Valor entre 0 y 1, ambos incluidos.
 					br.close();
 					//return random;
-					return 2;
+					return random;
 			}
 			//Sino
 			else{
@@ -304,11 +388,11 @@ public class ProcesamientoDatos {
 					br.close();
 					return 0;
 				}
-				//si son iguales las cantidades, se retorna un numero al azar entre 0 y 1 
+				//si son iguales las cantidades, se considera como un sentimiento neutro = 2 
 				else{
-					int random = (int) Math.floor(Math.random()*(1-0+1)+0);  // Valor entre 0 y 1, ambos incluidos.
+					//int random = (int) Math.floor(Math.random()*(1-0+1)+0);  // Valor entre 0 y 1, ambos incluidos.
 					br.close();
-					return random;
+					return 2;
 				}
 			}
 		}
@@ -402,4 +486,287 @@ public class ProcesamientoDatos {
             e.printStackTrace();
          }
 	}
+	
+	public ArrayList<String[]> cargarRegionesCiudades(String nombreArchivo){
+		File archivo = new File(nombreArchivo);
+		ArrayList<String[]>regionesCiudades=null;
+		try {
+			FileReader fr = new FileReader (archivo);
+			BufferedReader br = new BufferedReader(fr);
+			String linea = br.readLine();
+			ArrayList<String> auxRegiones = new ArrayList<String>();
+			ArrayList<String> auxCiudades = new ArrayList<String>();
+			linea = br.readLine();
+			while(linea!=null){
+				String[] campos = linea.split(",");
+				if(!campos[0].equals("null") && !campos[1].equals("null")){
+					if(auxRegiones.indexOf(campos[0])== -1){
+						auxRegiones.add(campos[0]);	
+					}
+					auxCiudades.add(campos[1]);
+				}
+				linea=br.readLine();
+			}
+			br.close();
+			regionesCiudades= new ArrayList<String[]>();
+			String[] regiones= new String[auxRegiones.size()];
+			String[] ciudades= new String[auxCiudades.size()];
+			for(int i=0; i < regiones.length; i++){
+				regiones[i]=auxRegiones.get(i);
+			}
+			for(int i=0; i < ciudades.length; i++){
+				ciudades[i]=auxCiudades.get(i);
+			}
+			regionesCiudades.add(0,regiones);
+			regionesCiudades.add(1,ciudades);
+			return regionesCiudades;
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return regionesCiudades;
+	}
+	
+	//metodo que calcula la aprobacion regional de un candidato
+	//la formula es: aprobacion = tpos[i]*0.7 + likes[i]*0.2 + rts[i]*0.1
+	//donde 
+	/* tpos_total = total de tweets positivos entre todos los candidatos en una region
+		tpos[i] = tpos_candidato[i]/tpos_total
+
+	likes_total = cantidad total de likes a los tweets POSITIVOS entre todos los candidatos en una region
+	likes[i] = likes_candidato[i]/likes_total
+
+	rts_total = total de rts a los tweets POSITIVOS entre todos los candidatos en una region
+	rts[i] = rts_candidato[i]/rts_total
+	 */
+	public double calcularAprobacionRegional(int idCandidato, String region){
+		double aprobacion = 0;
+		double cte1= 0.7;
+		double cte2 = 0.2;
+		double cte3= 0.1;
+		double opPosTotal = (double) cmsql.obtenerCantidadOpinionesPositivas(region);
+		//System.out.println(opPosTotal);
+		double opPosCand = (double) cmsql.obtenerCantidadOpinionesPositivasCand(idCandidato, region);
+		//System.out.println(opPosCand);
+		double opPosLikesTotal = (double) cmsql.obtenerCantidadLikesOpinionesPositivas(region);
+		//System.out.println(opPosLikesTotal);
+		double opPosLikesCand = (double) cmsql.obtenerCantidadLikesOpinionesPositivasCand(idCandidato, region);
+		//System.out.println(opPosLikesCand);
+		double opPosRtsTotal = (double) cmsql.obtenerCantidadRtsOpinionesPositivas(region);
+		//System.out.println(opPosRtsTotal);
+		double opPosRtsCand = (double) cmsql.obtenerCantidadRtsOpinionesPositivasCand(idCandidato, region);
+		//System.out.println(opPosRtsCand);
+		double opinionesPosCand=0;
+		double likesPosCand=0;
+		double rtsPosCand=0;
+		if(opPosTotal!=0){
+			 opinionesPosCand = opPosCand/opPosTotal;	
+		}
+		if(opPosLikesTotal!=0){
+			likesPosCand= opPosLikesCand/opPosLikesTotal;
+		}
+		if(opPosRtsTotal!=0){
+			rtsPosCand = opPosRtsCand/opPosRtsTotal;;
+		}
+		//System.out.println("opniones: "+opinionesPosCand);
+		//System.out.println("likes: "+likesPosCand);
+		//System.out.println("rts: "+rtsPosCand);
+		aprobacion = (opinionesPosCand * cte1) +(likesPosCand*cte2) +(rtsPosCand*cte3);
+		return aprobacion;
+	}
+	
+	
+	
+	//metodo que calcula la aprobacion en una ciudad de un candidato
+		//la formula es: aprobacion = tpos[i]*0.7 + likes[i]*0.2 + rts[i]*0.1
+		//donde 
+		/* tpos_total = total de tweets positivos entre todos los candidatos en una ciudad
+			tpos[i] = tpos_candidato[i]/tpos_total
+
+		likes_total = cantidad total de likes a los tweets POSITIVOS entre todos los candidatos en una ciudad
+		likes[i] = likes_candidato[i]/likes_total
+
+		rts_total = total de rts a los tweets POSITIVOS entre todos los candidatos en una ciudad
+		rts[i] = rts_candidato[i]/rts_total
+		 */
+		public double calcularAprobacionCiudad(int idCandidato, String ciudad){
+			double aprobacion = 0;
+			double cte1= 0.7;
+			double cte2 = 0.2;
+			double cte3= 0.1;
+			double opPosTotal = (double) cmsql.obtenerCantidadOpinionesPositivasCiudad(ciudad);
+			//System.out.println(opPosTotal);
+			double opPosCand = (double) cmsql.obtenerCantidadOpinionesPositivasCandCiudad(idCandidato, ciudad);
+			//System.out.println(opPosCand);
+			double opPosLikesTotal = (double) cmsql.obtenerCantidadLikesOpinionesPositivasCiudad(ciudad);
+			//System.out.println(opPosLikesTotal);
+			double opPosLikesCand = (double) cmsql.obtenerCantidadLikesOpinionesPositivasCandCiudad(idCandidato, ciudad);
+			//System.out.println(opPosLikesCand);
+			double opPosRtsTotal = (double) cmsql.obtenerCantidadRtsOpinionesPositivasCiudad(ciudad);
+			//System.out.println(opPosRtsTotal);
+			double opPosRtsCand = (double) cmsql.obtenerCantidadRtsOpinionesPositivasCandCiudad(idCandidato, ciudad);
+			double opinionesPosCand=0;
+			double likesPosCand=0;
+			double rtsPosCand=0;
+			if(opPosTotal!=0){
+				 opinionesPosCand = opPosCand/opPosTotal;	
+			}
+			if(opPosLikesTotal!=0){
+				likesPosCand= opPosLikesCand/opPosLikesTotal;
+			}
+			if(opPosRtsTotal!=0){
+				rtsPosCand = opPosRtsCand/opPosRtsTotal;;
+			}
+			aprobacion = (opinionesPosCand * cte1) +(likesPosCand*cte2) +(rtsPosCand*cte3);
+			return aprobacion;
+		}
+		
+		
+		//CALCULO DE LA DESAPROBACION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		
+		//todo lo positivo se considera negativo en las consultas mysql
+		
+		
+		//metodo que calcula la aprobacion nacional de un candidato
+		//la formula es: aprobacion = tpos[i]*0.7 + likes[i]*0.2 + rts[i]*0.1
+		//donde 
+		/* tpos_total = total de tweets positivos entre todos los candidatos
+			tpos[i] = tpos_candidato[i]/tpos_total
+
+		likes_total = cantidad total de likes a los tweets POSITIVOS entre todos los candidatos
+		likes[i] = likes_candidato[i]/likes_total
+
+		rts_total = total de rts a los tweets POSITIVOS entre todos los candidatos
+		rts[i] = rts_candidato[i]/rts_total
+		 */
+		public double calcularDesaprobacionNacional(int idCandidato){
+			double aprobacion = 0;
+			double cte1= 0.7;
+			double cte2 = 0.2;
+			double cte3= 0.1;
+			double opPosTotal = (double) cmsql.obtenerCantidadOpinionesNegativas();
+			System.out.println(opPosTotal);
+			double opPosCand = (double) cmsql.obtenerCantidadOpinionesNegativasCand(idCandidato);
+			System.out.println(opPosCand);
+			double opPosLikesTotal = (double) cmsql.obtenerCantidadLikesOpinionesNegativas();
+			System.out.println(opPosLikesTotal);
+			double opPosLikesCand = (double) cmsql.obtenerCantidadLikesOpinionesNegativasCand(idCandidato);
+			System.out.println(opPosLikesCand);
+			double opPosRtsTotal = (double) cmsql.obtenerCantidadRtsOpinionesNegativas();
+			System.out.println(opPosRtsTotal);
+			double opPosRtsCand = (double) cmsql.obtenerCantidadRtsOpinionesNegativasCand(idCandidato);
+			System.out.println(opPosRtsCand);
+			double opinionesPosCand=0;
+			double likesPosCand=0;
+			double rtsPosCand=0;
+			if(opPosTotal!=0){
+				 opinionesPosCand = opPosCand/opPosTotal;	
+			}
+			if(opPosLikesTotal!=0){
+				likesPosCand= opPosLikesCand/opPosLikesTotal;
+			}
+			if(opPosRtsTotal!=0){
+				rtsPosCand = opPosRtsCand/opPosRtsTotal;;
+			}
+			aprobacion = (opinionesPosCand * cte1) +(likesPosCand*cte2) +(rtsPosCand*cte3);
+			return aprobacion;
+		}
+
+		
+		//metodo que calcula la desaprobacion regional de un candidato
+		//la formula es: desaprobacion = tpos[i]*0.7 + likes[i]*0.2 + rts[i]*0.1
+		//donde 
+		/* tpos_total = total de tweets positivos entre todos los candidatos en una region
+			tpos[i] = tpos_candidato[i]/tpos_total
+
+		likes_total = cantidad total de likes a los tweets POSITIVOS entre todos los candidatos en una region
+		likes[i] = likes_candidato[i]/likes_total
+
+		rts_total = total de rts a los tweets POSITIVOS entre todos los candidatos en una region
+		rts[i] = rts_candidato[i]/rts_total
+		 */
+		public double calcularDesaprobacionRegional(int idCandidato, String region){
+			double aprobacion = 0;
+			double cte1= 0.7;
+			double cte2 = 0.2;
+			double cte3= 0.1;
+			double opPosTotal = (double) cmsql.obtenerCantidadOpinionesNegativas(region);
+			//System.out.println(opPosTotal);
+			double opPosCand = (double) cmsql.obtenerCantidadOpinionesNegativasCand(idCandidato, region);
+			//System.out.println(opPosCand);
+			double opPosLikesTotal = (double) cmsql.obtenerCantidadLikesOpinionesNegativas(region);
+			//System.out.println(opPosLikesTotal);
+			double opPosLikesCand = (double) cmsql.obtenerCantidadLikesOpinionesNegativasCand(idCandidato, region);
+			//System.out.println(opPosLikesCand);
+			double opPosRtsTotal = (double) cmsql.obtenerCantidadRtsOpinionesNegativas(region);
+			//System.out.println(opPosRtsTotal);
+			double opPosRtsCand = (double) cmsql.obtenerCantidadRtsOpinionesNegativasCand(idCandidato, region);
+			//System.out.println(opPosRtsCand);
+			double opinionesPosCand=0;
+			double likesPosCand=0;
+			double rtsPosCand=0;
+			if(opPosTotal!=0){
+				 opinionesPosCand = opPosCand/opPosTotal;	
+			}
+			if(opPosLikesTotal!=0){
+				likesPosCand= opPosLikesCand/opPosLikesTotal;
+			}
+			if(opPosRtsTotal!=0){
+				rtsPosCand = opPosRtsCand/opPosRtsTotal;;
+			}
+			//System.out.println("rts: "+rtsPosCand);
+			aprobacion = (opinionesPosCand * cte1) +(likesPosCand*cte2) +(rtsPosCand*cte3);
+			return aprobacion;
+		}
+		
+		
+		
+		//metodo que calcula la aprobacion en una ciudad de un candidato
+			//la formula es: aprobacion = tpos[i]*0.7 + likes[i]*0.2 + rts[i]*0.1
+			//donde 
+			/* tpos_total = total de tweets positivos entre todos los candidatos en una ciudad
+				tpos[i] = tpos_candidato[i]/tpos_total
+
+			likes_total = cantidad total de likes a los tweets POSITIVOS entre todos los candidatos en una ciudad
+			likes[i] = likes_candidato[i]/likes_total
+
+			rts_total = total de rts a los tweets POSITIVOS entre todos los candidatos en una ciudad
+			rts[i] = rts_candidato[i]/rts_total
+			 */
+			public double calcularDesaprobacionCiudad(int idCandidato, String ciudad){
+				double aprobacion = 0;
+				double cte1= 0.7;
+				double cte2 = 0.2;
+				double cte3= 0.1;
+				double opPosTotal = (double) cmsql.obtenerCantidadOpinionesNegativasCiudad(ciudad);
+				//System.out.println(opPosTotal);
+				double opPosCand = (double) cmsql.obtenerCantidadOpinionesNegativasCandCiudad(idCandidato, ciudad);
+				//System.out.println(opPosCand);
+				double opPosLikesTotal = (double) cmsql.obtenerCantidadLikesOpinionesNegativasCiudad(ciudad);
+				//System.out.println(opPosLikesTotal);
+				double opPosLikesCand = (double) cmsql.obtenerCantidadLikesOpinionesNegativasCandCiudad(idCandidato, ciudad);
+				//System.out.println(opPosLikesCand);
+				double opPosRtsTotal = (double) cmsql.obtenerCantidadRtsOpinionesNegativasCiudad(ciudad);
+				//System.out.println(opPosRtsTotal);
+				double opPosRtsCand = (double) cmsql.obtenerCantidadRtsOpinionesNegativasCandCiudad(idCandidato, ciudad);
+				//System.out.println(opPosRtsCand);
+				double opinionesPosCand=0;
+				double likesPosCand=0;
+				double rtsPosCand=0;
+				if(opPosTotal!=0){
+					 opinionesPosCand = opPosCand/opPosTotal;	
+				}
+				if(opPosLikesTotal!=0){
+					likesPosCand= opPosLikesCand/opPosLikesTotal;
+				}
+				if(opPosRtsTotal!=0){
+					rtsPosCand = opPosRtsCand/opPosRtsTotal;;
+				}
+				//System.out.println("rts: "+rtsPosCand);
+				aprobacion = (opinionesPosCand * cte1) +(likesPosCand*cte2) +(rtsPosCand*cte3);
+				return aprobacion;
+			}
 }
