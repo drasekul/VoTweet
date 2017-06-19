@@ -116,6 +116,34 @@ public class ConexionMySQL {
 		
 	}
 	
+	//Sobrecarga del metodo consultar, para que se pueda asociar un string y un entero como parametro a la consulta
+	public ResultSet consultar(String consulta, int parametroInt, String parametroString){
+		 ResultSet resultado;
+	        try {
+	        	PreparedStatement ps = con.prepareStatement(consulta);
+	        	ps.setInt(1, parametroInt);
+	        	ps.setString(2, parametroString);
+	        	resultado= ps.executeQuery();
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	            return null;
+	        }        return resultado;
+		
+	}
+	//Sobrecarga del metodo consultar, para que se pueda asociar un string como parametro a la consulta
+		public ResultSet consultar(String consulta, String parametroString){
+			 ResultSet resultado;
+		        try {
+		        	PreparedStatement ps = con.prepareStatement(consulta);
+		        	ps.setString(1, parametroString);
+		        	resultado= ps.executeQuery();
+		        } catch (SQLException e) {
+		            e.printStackTrace();
+		            return null;
+		        }        return resultado;
+			
+		}
+	
 	//Metodo que valida que no exista la opinion a insertar
 	//retorna 0 si no existe la opinion
 	//retorna 1 si existe
@@ -141,15 +169,17 @@ public class ConexionMySQL {
 			}
 			else{
 				//Sino, se busca nuevamente, pero esta vez sin considerar rt y likes
-				PreparedStatement ps1 = con.prepareStatement("SELECT o.opinion_id FROM opinion o WHERE o.opinion_autor=? AND o.opinion_fecha=? AND o.cdto_id=? AND o.opinion_pais_ubicacion=? AND o.opinion_region_ubicacion=? AND o.opinion_ciudad_ubicacion=? AND o.opinion_menciona_candidato=? AND o.opinion_resp_candidato=?");
+				PreparedStatement ps1 = con.prepareStatement("SELECT o.opinion_id FROM opinion o WHERE o.opinion_autor=? AND o.opinion_fecha=? AND o.cdto_id=?");
 				ps1.setString(1, autor);
 				ps1.setTimestamp(2, fechaCreacion);
 				ps1.setInt(3, idCandidato);
+				/*
 				ps1.setString(4, pais);
 				ps1.setString(5, region);
 				ps1.setString(6, ciudad);
 				ps1.setBoolean(7, mencionaCandidato);
 				ps1.setBoolean(8, respCandidato);
+				*/
 				ResultSet rs1 = ps1.executeQuery();
 				//SI llega el id
 				if(rs1.next()){
@@ -162,54 +192,10 @@ public class ConexionMySQL {
 					ps2.executeUpdate();
 					return 2;
 				}
-				//Si no llega el id, se vuelve a buscar ahora sin considerar los likes solamente
 				else{
-					PreparedStatement ps3 = con.prepareStatement("SELECT o.opinion_id FROM opinion o WHERE o.opinion_retweets=? AND o.opinion_autor=? AND o.opinion_fecha=? AND o.cdto_id=? AND o.opinion_pais_ubicacion=? AND o.opinion_region_ubicacion=? AND o.opinion_ciudad_ubicacion=? AND o.opinion_menciona_candidato=? AND o.opinion_resp_candidato=?");
-					ps3.setInt(1, cantidadRt);
-					ps3.setString(2, autor);
-					ps3.setTimestamp(3, fechaCreacion);
-					ps3.setInt(4, idCandidato);
-					ps3.setString(5, pais);
-					ps3.setString(6, region);
-					ps3.setString(7, ciudad);
-					ps3.setBoolean(8, mencionaCandidato);
-					ps3.setBoolean(9, respCandidato);
-					ResultSet rs2 = ps3.executeQuery();
-					if(rs2.next()){
-						//Si llega el id, se actualiza la cantidad de likes
-						PreparedStatement ps4 = con.prepareStatement("UPDATE opinion SET opinion_likes=? WHERE opinion_id=?");
-						ps4.setInt(1, cantidadLikes);
-						ps4.setInt(2, rs1.getInt("opinion_id"));
-						ps4.executeUpdate();
-						return 2;
+					//Si se llega a este punto, significa que no esta la opinion
+					return 0;
 					}
-					else{
-						//Si no, se busca omitiendo la cantidad de likes
-						PreparedStatement ps5 = con.prepareStatement("SELECT o.opinion_id FROM opinion o WHERE o.opinion_likes=? AND o.opinion_autor=? AND o.opinion_fecha=? AND o.cdto_id=? AND o.opinion_pais_ubicacion=? AND o.opinion_region_ubicacion=? AND o.opinion_ciudad_ubicacion=? AND o.opinion_menciona_candidato=? AND o.opinion_resp_candidato=?");
-						ps5.setInt(1, cantidadLikes);
-						ps5.setString(2, autor);
-						ps5.setTimestamp(3, fechaCreacion);
-						ps5.setInt(4, idCandidato);
-						ps5.setString(5, pais);
-						ps5.setString(6, region);
-						ps5.setString(7, ciudad);
-						ps5.setBoolean(8, mencionaCandidato);
-						ps5.setBoolean(9, respCandidato);
-						ResultSet rs3 = ps5.executeQuery();
-						if(rs3.next()){
-							//Si llega el id, se actualiza la cantidad de rts
-							PreparedStatement ps4 = con.prepareStatement("UPDATE opinion SET opinion_retweets=? WHERE opinion_id=?");
-							ps4.setInt(1, cantidadRt);
-							ps4.setInt(2, rs1.getInt("opinion_id"));
-							ps4.executeUpdate();
-							return 2;
-						}
-						else{
-							//Si se llega a este punto, significa que no esta la opinion
-							return 0;
-						}
-					}
-				}
 			}
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -414,4 +400,494 @@ public class ConexionMySQL {
 			}
 
 	//TODOS ESTOS METODOS SON PARA CALCULAR LA APROBACION POR REGION
+			
+			//Metodo que retorna la suma de todos los likes de todas las opiniones positivas en la base de datos mysql
+			public int obtenerCantidadLikesOpinionesPositivas(String region){
+				int cantidad=0;
+				ResultSet totalOpPosLikes = consultar("SELECT COALESCE(SUM(opinion_likes),0) AS TotalLikesTweetsPos FROM opinion WHERE opinion_sentimiento=1 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND opinion_region_ubicacion=?",region);
+				try {
+					if(totalOpPosLikes.next()){
+						cantidad = totalOpPosLikes.getInt("TotalLikesTweetsPos");
+						//System.out.println("en el metodo: cantidad:  "+cantidad);
+					}
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				return cantidad;
+			}
+			
+			//Metodo que retorna la suma de todos los likes de todas las opiniones positivas referentes a un candidato en la base de datos mysql
+				public int obtenerCantidadLikesOpinionesPositivasCand(int idCandidato, String region){
+					int cantidad=0;
+					ResultSet totalOpPosLikesCand = consultar("SELECT COALESCE(SUM(opinion_likes),0) AS TotalLikesTweetsPosCand FROM opinion WHERE opinion_sentimiento =1 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none')  AND cdto_id=? AND opinion_region_ubicacion=?",idCandidato,region);
+					try {
+						if(totalOpPosLikesCand.next()){
+							cantidad = totalOpPosLikesCand.getInt("TotalLikesTweetsPosCand");
+							//System.out.println("en el metodo: cantidad:  "+cantidad);
+						}
+					} catch (SQLException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					return cantidad;
+				}
+			
+			//Metodo que retorna el total de opiniones positivas en la base de datos mysql
+			public int obtenerCantidadOpinionesPositivas(String region){
+				int cantidad=0;
+				ResultSet totalOpPos= consultar("SELECT COALESCE(COUNT(*),0) AS TotalTweetsPos FROM opinion WHERE opinion_sentimiento =1 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND opinion_region_ubicacion=?",region);
+				try {
+					if(totalOpPos.next()){
+						cantidad= totalOpPos.getInt("TotalTweetsPos");
+						//System.out.println("en el metodo: cantidad:  "+cantidad);
+					}
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				return cantidad;
+			}
+			
+			//Metodo que retorna el total de opiniones positivas referentes a un candidato en la base de datos mysql
+				public int obtenerCantidadOpinionesPositivasCand(int idCandidato, String region){
+					int cantidad=0;
+					ResultSet totalOpPosCand= consultar("SELECT COALESCE(COUNT(*),0) AS TotalTweetsPosCand FROM opinion WHERE opinion_sentimiento =1 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND cdto_id=? AND opinion_region_ubicacion=?",idCandidato,region);
+					try {
+						if(totalOpPosCand.next()){
+							cantidad= totalOpPosCand.getInt("TotalTweetsPosCand");
+							//System.out.println("en el metodo: cantidad:  "+cantidad);
+						}
+					} catch (SQLException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					return cantidad;
+				}
+				
+				//Metodo que retorna la suma de todos los rts de todas las opiniones positivas en la base de datos mysql
+				public int obtenerCantidadRtsOpinionesPositivas(String region){
+					int cantidad=0;
+					ResultSet totalOpPosRts = consultar("SELECT COALESCE(SUM(opinion_retweets),0) AS TotalRtsTweetsPos FROM opinion WHERE opinion_sentimiento =1 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND opinion_region_ubicacion=?",region);
+					try {
+						if(totalOpPosRts.next()){
+							cantidad = totalOpPosRts.getInt("TotalRtsTweetsPos");
+							//System.out.println("en el metodo: cantidad:  "+cantidad);
+						}
+					} catch (SQLException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					return cantidad;
+				}
+				
+				//Metodo que retorna la suma de todos los likes de todas las opiniones positivas referentes a un candidato en la base de datos mysql
+					public int obtenerCantidadRtsOpinionesPositivasCand(int idCandidato, String region){
+						int cantidad=0;
+						ResultSet totalOpPosRtsCand = consultar("SELECT COALESCE(SUM(opinion_retweets),0) AS TotalRtsTweetsPosCand FROM opinion WHERE opinion_sentimiento =1 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND cdto_id=? AND opinion_region_ubicacion=?",idCandidato,region);
+						try {
+							if(totalOpPosRtsCand.next()){
+								cantidad = totalOpPosRtsCand.getInt("TotalRtsTweetsPosCand");
+								//System.out.println("en el metodo: cantidad:  "+cantidad);
+							}
+						} catch (SQLException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						return cantidad;
+					}
+	
+	//TODOS ESTOS METODOS SON PARA CALCULAR LA APROBACION POR CIUDAD!!!!!!!!!!
+					//Metodo que retorna la suma de todos los likes de todas las opiniones positivas en la base de datos mysql
+					public int obtenerCantidadLikesOpinionesPositivasCiudad(String ciudad){
+						int cantidad=0;
+						ResultSet totalOpPosLikes = consultar("SELECT COALESCE(SUM(opinion_likes),0) AS TotalLikesTweetsPos FROM opinion WHERE opinion_sentimiento=1 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND opinion_ciudad_ubicacion=?",ciudad);
+						try {
+							if(totalOpPosLikes.next()){
+								cantidad = totalOpPosLikes.getInt("TotalLikesTweetsPos");
+								//System.out.println("en el metodo: cantidad:  "+cantidad);
+							}
+						} catch (SQLException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						return cantidad;
+					}
+					
+					//Metodo que retorna la suma de todos los likes de todas las opiniones positivas referentes a un candidato en la base de datos mysql
+						public int obtenerCantidadLikesOpinionesPositivasCandCiudad(int idCandidato, String ciudad){
+							int cantidad=0;
+							ResultSet totalOpPosLikesCand = consultar("SELECT COALESCE(SUM(opinion_likes),0) AS TotalLikesTweetsPosCand FROM opinion WHERE opinion_sentimiento =1 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND cdto_id=? AND opinion_ciudad_ubicacion=?",idCandidato, ciudad);
+							try {
+								if(totalOpPosLikesCand.next()){
+									cantidad = totalOpPosLikesCand.getInt("TotalLikesTweetsPosCand");
+									//System.out.println("en el metodo: cantidad:  "+cantidad);
+								}
+							} catch (SQLException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+							return cantidad;
+						}
+					
+					//Metodo que retorna el total de opiniones positivas en la base de datos mysql
+					public int obtenerCantidadOpinionesPositivasCiudad(String ciudad){
+						int cantidad=0;
+						ResultSet totalOpPos= consultar("SELECT COALESCE(COUNT(*),0) AS TotalTweetsPos FROM opinion WHERE opinion_sentimiento =1 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND opinion_ciudad_ubicacion=?",ciudad);
+						try {
+							if(totalOpPos.next()){
+								cantidad= totalOpPos.getInt("TotalTweetsPos");
+								//System.out.println("en el metodo: cantidad:  "+cantidad);
+							}
+						} catch (SQLException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						return cantidad;
+					}
+					
+					//Metodo que retorna el total de opiniones positivas referentes a un candidato en la base de datos mysql
+						public int obtenerCantidadOpinionesPositivasCandCiudad(int idCandidato, String ciudad){
+							int cantidad=0;
+							ResultSet totalOpPosCand= consultar("SELECT COALESCE(COUNT(*),0) AS TotalTweetsPosCand FROM opinion WHERE opinion_sentimiento =1 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND cdto_id=? AND opinion_ciudad_ubicacion=?",idCandidato,ciudad);
+							try {
+								if(totalOpPosCand.next()){
+									cantidad= totalOpPosCand.getInt("TotalTweetsPosCand");
+									//System.out.println("en el metodo: cantidad:  "+cantidad);
+								}
+							} catch (SQLException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+							return cantidad;
+						}
+						
+						//Metodo que retorna la suma de todos los rts de todas las opiniones positivas en la base de datos mysql
+						public int obtenerCantidadRtsOpinionesPositivasCiudad(String ciudad){
+							int cantidad=0;
+							ResultSet totalOpPosRts = consultar("SELECT COALESCE(SUM(opinion_retweets),0) AS TotalRtsTweetsPos FROM opinion WHERE opinion_sentimiento =1 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND opinion_ciudad_ubicacion=?",ciudad);
+							try {
+								if(totalOpPosRts.next()){
+									cantidad = totalOpPosRts.getInt("TotalRtsTweetsPos");
+									//System.out.println("en el metodo: cantidad:  "+cantidad);
+								}
+							} catch (SQLException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+							return cantidad;
+						}
+						
+						//Metodo que retorna la suma de todos los likes de todas las opiniones positivas referentes a un candidato en la base de datos mysql
+							public int obtenerCantidadRtsOpinionesPositivasCandCiudad(int idCandidato, String ciudad){
+								int cantidad=0;
+								ResultSet totalOpPosRtsCand = consultar("SELECT COALESCE(SUM(opinion_retweets),0) AS TotalRtsTweetsPosCand FROM opinion WHERE opinion_sentimiento =1 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND cdto_id=? AND opinion_ciudad_ubicacion=?",idCandidato,ciudad);
+								try {
+									if(totalOpPosRtsCand.next()){
+										cantidad = totalOpPosRtsCand.getInt("TotalRtsTweetsPosCand");
+										//System.out.println("en el metodo: cantidad:  "+cantidad);
+									}
+								} catch (SQLException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+								return cantidad;
+							}
+							
+							
+	//DESAPROBACION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+							//TODOS ESTOS METODOS SON PARA CALCULAR LA DESAPROBACION NACIONAL!!!!
+							
+							//Metodo que retorna la suma de todos los likes de todas las opiniones negativas en la base de datos mysql
+							public int obtenerCantidadLikesOpinionesNegativas(){
+								int cantidad=0;
+								ResultSet totalOpNegLikes = consultar("SELECT COALESCE(SUM(opinion_likes),0) AS TotalLikesTweetsNeg FROM opinion WHERE opinion_sentimiento=0 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none')");
+								try {
+									if(totalOpNegLikes.next()){
+										cantidad = totalOpNegLikes.getInt("TotalLikesTweetsNeg");
+										//System.out.println("en el metodo: cantidad:  "+cantidad);
+									}
+								} catch (SQLException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+								return cantidad;
+							}
+							
+							//Metodo que retorna la suma de todos los likes de todas las opiniones negativas referentes a un candidato en la base de datos mysql
+								public int obtenerCantidadLikesOpinionesNegativasCand(int idCandidato){
+									int cantidad=0;
+									ResultSet totalOpNegLikesCand = consultar("SELECT COALESCE(SUM(opinion_likes),0) AS TotalLikesTweetsNegCand FROM opinion WHERE opinion_sentimiento =0 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND cdto_id="+idCandidato);
+									try {
+										if(totalOpNegLikesCand.next()){
+											cantidad = totalOpNegLikesCand.getInt("TotalLikesTweetsNegCand");
+											//System.out.println("en el metodo: cantidad:  "+cantidad);
+										}
+									} catch (SQLException e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
+									}
+									return cantidad;
+								}
+							
+							//Metodo que retorna el total de opiniones negativas en la base de datos mysql
+							public int obtenerCantidadOpinionesNegativas(){
+								int cantidad=0;
+								ResultSet totalOpPos= consultar("SELECT COALESCE(COUNT(*),0) AS TotalTweetsPos FROM opinion WHERE opinion_sentimiento =0 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none')");
+								try {
+									if(totalOpPos.next()){
+										cantidad= totalOpPos.getInt("TotalTweetsPos");
+										//System.out.println("en el metodo: cantidad:  "+cantidad);
+									}
+								} catch (SQLException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+								return cantidad;
+							}
+							
+							//Metodo que retorna el total de opiniones negativas referentes a un candidato en la base de datos mysql
+								public int obtenerCantidadOpinionesNegativasCand(int idCandidato){
+									int cantidad=0;
+									ResultSet totalOpPosCand= consultar("SELECT COALESCE(COUNT(*),0) AS TotalTweetsPosCand FROM opinion WHERE opinion_sentimiento =0 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND cdto_id="+idCandidato);
+									try {
+										if(totalOpPosCand.next()){
+											cantidad= totalOpPosCand.getInt("TotalTweetsPosCand");
+											//System.out.println("en el metodo: cantidad:  "+cantidad);
+										}
+									} catch (SQLException e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
+									}
+									return cantidad;
+								}
+								
+								//Metodo que retorna la suma de todos los rts de todas las opiniones negativas en la base de datos mysql
+								public int obtenerCantidadRtsOpinionesNegativas(){
+									int cantidad=0;
+									ResultSet totalOpPosRts = consultar("SELECT COALESCE(SUM(opinion_retweets),0) AS TotalRtsTweetsPos FROM opinion WHERE opinion_sentimiento =0 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none')");
+									try {
+										if(totalOpPosRts.next()){
+											cantidad = totalOpPosRts.getInt("TotalRtsTweetsPos");
+											//System.out.println("en el metodo: cantidad:  "+cantidad);
+										}
+									} catch (SQLException e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
+									}
+									return cantidad;
+								}
+								
+								//Metodo que retorna la suma de todos los likes de todas las opiniones negativas referentes a un candidato en la base de datos mysql
+									public int obtenerCantidadRtsOpinionesNegativasCand(int idCandidato){
+										int cantidad=0;
+										ResultSet totalOpPosRtsCand = consultar("SELECT COALESCE(SUM(opinion_retweets),0) AS TotalRtsTweetsPosCand FROM opinion WHERE opinion_sentimiento =0 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND cdto_id="+idCandidato);
+										try {
+											if(totalOpPosRtsCand.next()){
+												cantidad = totalOpPosRtsCand.getInt("TotalRtsTweetsPosCand");
+												//System.out.println("en el metodo: cantidad:  "+cantidad);
+											}
+										} catch (SQLException e) {
+											// TODO Auto-generated catch block
+											e.printStackTrace();
+										}
+										return cantidad;
+									}
+
+							//TODOS ESTOS METODOS SON PARA CALCULAR LA DESAPROBACION POR REGION
+									
+									//Metodo que retorna la suma de todos los likes de todas las opiniones negativas en la base de datos mysql
+									public int obtenerCantidadLikesOpinionesNegativas(String region){
+										int cantidad=0;
+										ResultSet totalOpPosLikes = consultar("SELECT COALESCE(SUM(opinion_likes),0) AS TotalLikesTweetsPos FROM opinion WHERE opinion_sentimiento=0 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND opinion_region_ubicacion=?",region);
+										try {
+											if(totalOpPosLikes.next()){
+												cantidad = totalOpPosLikes.getInt("TotalLikesTweetsPos");
+												//System.out.println("en el metodo: cantidad:  "+cantidad);
+											}
+										} catch (SQLException e) {
+											// TODO Auto-generated catch block
+											e.printStackTrace();
+										}
+										return cantidad;
+									}
+									
+									//Metodo que retorna la suma de todos los likes de todas las opiniones negativas referentes a un candidato en la base de datos mysql
+										public int obtenerCantidadLikesOpinionesNegativasCand(int idCandidato, String region){
+											int cantidad=0;
+											ResultSet totalOpPosLikesCand = consultar("SELECT COALESCE(SUM(opinion_likes),0) AS TotalLikesTweetsPosCand FROM opinion WHERE opinion_sentimiento =0 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND cdto_id=? AND opinion_region_ubicacion=?",idCandidato,region);
+											try {
+												if(totalOpPosLikesCand.next()){
+													cantidad = totalOpPosLikesCand.getInt("TotalLikesTweetsPosCand");
+													//System.out.println("en el metodo: cantidad:  "+cantidad);
+												}
+											} catch (SQLException e) {
+												// TODO Auto-generated catch block
+												e.printStackTrace();
+											}
+											return cantidad;
+										}
+									
+									//Metodo que retorna el total de opiniones Negativas en la base de datos mysql
+									public int obtenerCantidadOpinionesNegativas(String region){
+										int cantidad=0;
+										ResultSet totalOpPos= consultar("SELECT COALESCE(COUNT(*),0) AS TotalTweetsPos FROM opinion WHERE opinion_sentimiento =0 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND opinion_region_ubicacion=?",region);
+										try {
+											if(totalOpPos.next()){
+												cantidad= totalOpPos.getInt("TotalTweetsPos");
+												//System.out.println("en el metodo: cantidad:  "+cantidad);
+											}
+										} catch (SQLException e) {
+											// TODO Auto-generated catch block
+											e.printStackTrace();
+										}
+										return cantidad;
+									}
+									
+									//Metodo que retorna el total de opiniones Negativas referentes a un candidato en la base de datos mysql
+										public int obtenerCantidadOpinionesNegativasCand(int idCandidato, String region){
+											int cantidad=0;
+											ResultSet totalOpPosCand= consultar("SELECT COALESCE(COUNT(*),0) AS TotalTweetsPosCand FROM opinion WHERE opinion_sentimiento =0 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND cdto_id=? AND opinion_region_ubicacion=?",idCandidato,region);
+											try {
+												if(totalOpPosCand.next()){
+													cantidad= totalOpPosCand.getInt("TotalTweetsPosCand");
+													//System.out.println("en el metodo: cantidad:  "+cantidad);
+												}
+											} catch (SQLException e) {
+												// TODO Auto-generated catch block
+												e.printStackTrace();
+											}
+											return cantidad;
+										}
+										
+										//Metodo que retorna la suma de todos los rts de todas las opiniones Negativas en la base de datos mysql
+										public int obtenerCantidadRtsOpinionesNegativas(String region){
+											int cantidad=0;
+											ResultSet totalOpPosRts = consultar("SELECT COALESCE(SUM(opinion_retweets),0) AS TotalRtsTweetsPos FROM opinion WHERE opinion_sentimiento =0 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND opinion_region_ubicacion=?",region);
+											try {
+												if(totalOpPosRts.next()){
+													cantidad = totalOpPosRts.getInt("TotalRtsTweetsPos");
+													//System.out.println("en el metodo: cantidad:  "+cantidad);
+												}
+											} catch (SQLException e) {
+												// TODO Auto-generated catch block
+												e.printStackTrace();
+											}
+											return cantidad;
+										}
+										
+										//Metodo que retorna la suma de todos los likes de todas las opiniones Negativas referentes a un candidato en la base de datos mysql
+											public int obtenerCantidadRtsOpinionesNegativasCand(int idCandidato, String region){
+												int cantidad=0;
+												ResultSet totalOpPosRtsCand = consultar("SELECT COALESCE(SUM(opinion_retweets),0) AS TotalRtsTweetsPosCand FROM opinion WHERE opinion_sentimiento =0 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND cdto_id=? AND opinion_region_ubicacion=?",idCandidato,region);
+												try {
+													if(totalOpPosRtsCand.next()){
+														cantidad = totalOpPosRtsCand.getInt("TotalRtsTweetsPosCand");
+														//System.out.println("en el metodo: cantidad:  "+cantidad);
+													}
+												} catch (SQLException e) {
+													// TODO Auto-generated catch block
+													e.printStackTrace();
+												}
+												return cantidad;
+											}
+							
+							//TODOS ESTOS METODOS SON PARA CALCULAR LA DESAPROBACION POR CIUDAD!!!!!!!!!!
+											//Metodo que retorna la suma de todos los likes de todas las opiniones Negativas en la base de datos mysql
+											public int obtenerCantidadLikesOpinionesNegativasCiudad(String ciudad){
+												int cantidad=0;
+												ResultSet totalOpPosLikes = consultar("SELECT COALESCE(SUM(opinion_likes),0) AS TotalLikesTweetsPos FROM opinion WHERE opinion_sentimiento=0 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND opinion_ciudad_ubicacion=?",ciudad);
+												try {
+													if(totalOpPosLikes.next()){
+														cantidad = totalOpPosLikes.getInt("TotalLikesTweetsPos");
+														//System.out.println("en el metodo: cantidad:  "+cantidad);
+													}
+												} catch (SQLException e) {
+													// TODO Auto-generated catch block
+													e.printStackTrace();
+												}
+												return cantidad;
+											}
+											
+											//Metodo que retorna la suma de todos los likes de todas las opiniones Negativas referentes a un candidato en la base de datos mysql
+												public int obtenerCantidadLikesOpinionesNegativasCandCiudad(int idCandidato, String ciudad){
+													int cantidad=0;
+													ResultSet totalOpPosLikesCand = consultar("SELECT COALESCE(SUM(opinion_likes),0) AS TotalLikesTweetsPosCand FROM opinion WHERE opinion_sentimiento =0 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND cdto_id=? AND opinion_ciudad_ubicacion=?",idCandidato,ciudad);
+													try {
+														if(totalOpPosLikesCand.next()){
+															cantidad = totalOpPosLikesCand.getInt("TotalLikesTweetsPosCand");
+															//System.out.println("en el metodo: cantidad:  "+cantidad);
+														}
+													} catch (SQLException e) {
+														// TODO Auto-generated catch block
+														e.printStackTrace();
+													}
+													return cantidad;
+												}
+											
+											//Metodo que retorna el total de opiniones Negativas en la base de datos mysql
+											public int obtenerCantidadOpinionesNegativasCiudad(String ciudad){
+												int cantidad=0;
+												ResultSet totalOpPos= consultar("SELECT COALESCE(COUNT(*),0) AS TotalTweetsPos FROM opinion WHERE opinion_sentimiento =0 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND opinion_ciudad_ubicacion=?",ciudad);
+												try {
+													if(totalOpPos.next()){
+														cantidad= totalOpPos.getInt("TotalTweetsPos");
+														//System.out.println("en el metodo: cantidad:  "+cantidad);
+													}
+												} catch (SQLException e) {
+													// TODO Auto-generated catch block
+													e.printStackTrace();
+												}
+												return cantidad;
+											}
+											
+											//Metodo que retorna el total de opiniones Negativas referentes a un candidato en la base de datos mysql
+												public int obtenerCantidadOpinionesNegativasCandCiudad(int idCandidato, String ciudad){
+													int cantidad=0;
+													ResultSet totalOpPosCand= consultar("SELECT COALESCE(COUNT(*),0) AS TotalTweetsPosCand FROM opinion WHERE opinion_sentimiento =0 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND cdto_id=? AND opinion_ciudad_ubicacion=?",idCandidato,ciudad);
+													try {
+														if(totalOpPosCand.next()){
+															cantidad= totalOpPosCand.getInt("TotalTweetsPosCand");
+															//System.out.println("en el metodo: cantidad:  "+cantidad);
+														}
+													} catch (SQLException e) {
+														// TODO Auto-generated catch block
+														e.printStackTrace();
+													}
+													return cantidad;
+												}
+												
+												//Metodo que retorna la suma de todos los rts de todas las opiniones Negativas en la base de datos mysql
+												public int obtenerCantidadRtsOpinionesNegativasCiudad(String ciudad){
+													int cantidad=0;
+													ResultSet totalOpPosRts = consultar("SELECT COALESCE(SUM(opinion_retweets),0) AS TotalRtsTweetsPos FROM opinion WHERE opinion_sentimiento =0 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND opinion_ciudad_ubicacion=?",ciudad);
+													try {
+														if(totalOpPosRts.next()){
+															cantidad = totalOpPosRts.getInt("TotalRtsTweetsPos");
+															//System.out.println("en el metodo: cantidad:  "+cantidad);
+														}
+													} catch (SQLException e) {
+														// TODO Auto-generated catch block
+														e.printStackTrace();
+													}
+													return cantidad;
+												}
+												
+												//Metodo que retorna la suma de todos los likes de todas las opiniones Negativas referentes a un candidato en la base de datos mysql
+													public int obtenerCantidadRtsOpinionesNegativasCandCiudad(int idCandidato, String ciudad){
+														int cantidad=0;
+														ResultSet totalOpPosRtsCand = consultar("SELECT COALESCE(SUM(opinion_retweets),0) AS TotalRtsTweetsPosCand FROM opinion WHERE opinion_sentimiento =0 AND (opinion_pais_ubicacion='Chile' OR opinion_pais_ubicacion='none') AND cdto_id=? AND opinion_ciudad_ubicacion=?",idCandidato,ciudad);
+														try {
+															if(totalOpPosRtsCand.next()){
+																cantidad = totalOpPosRtsCand.getInt("TotalRtsTweetsPosCand");
+																//System.out.println("en el metodo: cantidad:  "+cantidad);
+															}
+														} catch (SQLException e) {
+															// TODO Auto-generated catch block
+															e.printStackTrace();
+														}
+														return cantidad;
+													}						
+	
 }

@@ -1,0 +1,16 @@
+NumeroRomano,Region,RegionSinTilde
+I,Tarapacá,Tarapaca
+II,Antofagasta,Antofagasta
+III,Atacama,Atacama
+IV,Coquimbo,Coquimbo
+V,Valparaíso,Valparaiso
+VI,Libertador General Bernardo O'Higgins,Libertador General Bernardo O'Higgins
+VII,Maule,Maule
+VIII,BioBío,BioBio
+IX,La Araucanía,La Araucania
+X,Los Lagos,Los Lagos
+XI,Aysén del General Carlos Ibañez del Campo,Aysen del General Carlos Ibanez del Campo
+XII,Magallanes,Magallanes
+RM,Metropolitana,Metropolitana
+XIV,Los Ríos,Los Rios
+XV,Arica y Parinacota,Arica y Parinacota

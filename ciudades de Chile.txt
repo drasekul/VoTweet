@@ -1,0 +1,57 @@
+﻿Region,Ciudad,Comunas o terminos relaciones a la ciudad
+Arica y Parinacota,Arica
+Arica y Parinacota,Putre
+Tarapacá,Iquique,Alto Hospicio
+Tarapacá,Pozo Almonte,Camiña,Colchane,Huara,Pica
+Antofagasta,Antofagasta,Mejillones,Cierra Gorda,Taltal
+Antofagasta,Calama,Ollagüe,San Pedro de Atacama
+Antofagasta,Tocopilla,María Elena
+Atacama,Copiapó,Caldera,Tierra Amarilla
+Atacama,Chañaral,Diego de Almagro
+Atacama,Vallenar,Alto del Carmen,Freirina,Huasco
+Coquimbo,Ovalle,Combarbalá,Monte Patria,Punitaqui,Río Hurtado
+Coquimbo,Coquimbo,Andacollo,La Higuera,La Serena,Paihuano,Vicuña
+Coquimbo,Illapel,Canela,Los Vilos,Salamanca
+Valparaíso,Hanga Roa,Isla de Pascua
+Valparaíso,Los Andes,Calle Larga,Rinconada,San Esteban
+Valparaíso,La Ligua,Cabildo,Petorca,Papudo,Zapallar
+Valparaíso,Quillota,Hijuelas,La Calera,La Cruz,Nogales
+Valparaíso,San Antonio,Cartagena,El Quisco,El Tabo,Santo Domingo
+Valparaíso,San Felipe,Catemu,Llay-Llay,Panquehue,Putaendo,Santa María
+Valparaíso,Valparaíso,Valpo,Valparadise,Casablanca,Concón,Juan Fernández,Puchuncaví,Quintero,Viña del Mar
+Valparaíso,Quilpué,Limache,Olmué,Villa Alemana
+Libertador General Bernardo O'Higgins,Rancagua,Codegua,Coinco,Coltauco,Doñihue,Graneros,Las Cabras,Machalí,Malloa,Mostazal,Olivar,Peumo,Pichidegua,Quinta de Tilcoco,Rengo,Requinoa,San Vicente de Tagua Tagua
+Libertador General Bernardo O'Higgins,Pichilemu,La Estrella,Litueche,Marchihue,Navidad,Paredones
+Libertador General Bernardo O'Higgins,San Fernando,Chépica,Chimbarongo,Lolol,Nancagua,Palmilla,Peralillo,Placilla,Pumanque,Santa Cruz
+Maule,Cauquenes,Chango,Pelluhue
+Maule,Curicó,Hualañé,Licantén,Molina,Rauco,Romeral,Sagrada Familia,Teno,Vichunquén
+Maule,Linares,Colbún,Longaví,Parral,Retiro,San Javier,Villa Alegre,Yerbas Buenas
+Maule,Talca,Constitución,Curepto,Empedrado,Maule,Pelarco,Pencahue,Río Claro,San Clemente,San Rafael
+BioBío,Lebu,Arauco,Cañete,Contulmo,Curanilahue,Los Alamos,Tirúa
+BioBío,Los Ángeles,Alto BioBío,Antuco,Cabrero,Laja,Mulchén,Nacimiento,Negrete,Quilaco,Quilleco,San Rosendo,Santa Bárbara,Tucapel,Yumbel
+BioBío,Concepción,Conce,Coronel,Chiguayante,Florida,Hualpén,Hualqui,Lota,Penco,San Pedro de la Paz,Santa Juana,Talcahuano,Tomé
+BíoBío,Chillán,Bulnes,Chillán Viejo,Cobquecura,Coelemu,Cohueco,El Carmen,Ninhue,Ñiquén,Pemuco,Pinto,Portezuelo,Quillón,Quirihue,Ránquil,San Carlos,San Fabián,San Ignacio,San Nicolás,Trehuaco,Yungay
+La Araucanía,Temuco,Carahue,Cholchol,Cunco,Currarrehue,Freire,Galvarino,Gorbea,Lautaro,Loncoche,Melipeuco,Nueva Imperial,Padre Las Casas,Perquenco,Pitrufquén,Pucón,Puerto Saavedra,Teodoro Schmidt,Toltén,Vilcún,Villarrica
+La Araucanía,Angol,Collipulli,Curacautín,Ercilla,Lonquimay,Los Sauces,Lumaco,Purén,Reinaco,Traiguén,Victoria
+Los Ríos,Valdivia,Corral,Ranco,Los Lagos,Máfil,Mariquina,Paillaco,Panguipulli
+Los Ríos,La Unión,Futrono,Lago Ranco,Río Bueno
+Los Lagos,Castro,Ancud,Chonchi,Curazo de Vélez,Dalcahue,Puqueldón,Queilén,Quenchi,Quellón,Quinchao
+Los Lagos,Puerto Montt,Calbuco,Conchamó,Fresia,Frutillar,Llanquihue,Los Muermos,Maullín,Puerto Varas
+Los Lagos,Osorno,Puerto Octay,Purranque,Puyehue,Río Negro,San Juan de la Costa,San Pablo
+Los Lagos,Chaitén,Futaleufú,Hualaihue,Palena
+Aysén del General Carlos Ibañez del Campo,Coyhaique,Lago Verde
+Aysén del General Carlos Ibañez del Campo,Chile Chico,Río Ibañez
+Aysén del General Carlos Ibañez del Campo,Puerto Aysén,Aysén,Cisnes,Guaitecas
+Aysén del General Carlos Ibañez del Campo,Cochrane,O'Higgins,Tortel
+Magallanes,Punta Arenas
+Magallanes,Puerto Natales,Natales
+Magallanes,Porvenir
+Magallanes,Puerto Williams
+Magallanes,Antártica Chilena,Villa Las Estrellas
+Metropolitana,Colina,Lampa,Til Til
+Metropolitana,Puente Alto,Pirque,San José de Maipo
+Metropolitana,San Bernardo,Buin,Calera de Tango,Paine
+Metropolitana,Melipilla,Alhué,Curacaví,María Pinto,San Pedro
+Metropolitana,Santiago,Cerillos,Cerro Navia,Conchalí,El Bosque,Estación Central,Huechuraba,Independencia,La Cisterna,La Florida,La Pintana,La Granja,La Reina,Las Condes,Lo Barnechea,Lo Espejo,Lo Prado,Macúl,Maipú,Nuñoa,Pedro Aguirre Cerda,Peñalolén,Providencia,Pudahuel,Quilicura,Quintal Normal,Recoleta,Renca,San Miguel,San Joaquín,San Ramón,Vitacura
+Metropolitana,Talagante,El Monte,Isla de Maipo,Padre Hurtado,Peñaflor
+null,null,Chile,CHILE,chile,Chilito,CHILITO,chilito
