@@ -69,7 +69,6 @@ public class IndiceInvertido {
 				System.out.println(text);
 				 contador++;
 				*/
-				
 				String region_location = tweet.get("region_location").toString();
 				String city_location = tweet.get("city_location").toString();
 				String created_at = tweet.get("created_at").toString();
@@ -96,7 +95,8 @@ public class IndiceInvertido {
 				}catch(NullPointerException e){
 					others_users_mentions="none";
 				}
-				Document documento = crearDocumento(id,fav_count,retweet_count,country_location,region_location,city_location,text,created_at,is_retweeted,in_reply_to_user_screen_name,in_reply_to_user_id,user_id,user_screen_name,user_name,others_users_mentions,in_reply_to_status_id);
+				int user_followers_count = (int) tweet.get("user_followers_count");
+				Document documento = crearDocumento(id,fav_count,retweet_count,country_location,region_location,city_location,text,created_at,is_retweeted,in_reply_to_user_screen_name,in_reply_to_user_id,user_id,user_screen_name,user_name,others_users_mentions,in_reply_to_status_id, user_followers_count);
 				try {
 					//if(writer.getConfig().getOpenMode()== OpenMode.CREATE){
 						writer.addDocument(documento);
@@ -124,12 +124,14 @@ public class IndiceInvertido {
 
 	}
 	
-	private Document crearDocumento(long id, int fav_count, int retweet_count, String country_location, String region_location, String city_location, String text, String createdAt,String is_retweeted,String in_reply_to_user_screen_name,long in_reply_to_user_id, long user_id, String user_screen_name, String user_name, String others_users_mentions, long in_reply_to_status_id){
+	private Document crearDocumento(long id, int fav_count, int retweet_count, String country_location, String region_location, String city_location, String text, String createdAt,String is_retweeted,String in_reply_to_user_screen_name,long in_reply_to_user_id, long user_id, String user_screen_name, String user_name, String others_users_mentions, long in_reply_to_status_id, int user_followers_count){
 		Document documento= new Document();
 		documento.add(new LongPoint("id",id));
 		documento.add(new StoredField("id", id));
 		documento.add(new IntPoint("fav_count",fav_count));
 		documento.add(new StoredField("fav_count", fav_count));
+		documento.add(new IntPoint("user_followers_count",user_followers_count));
+		documento.add(new StoredField("user_followers_count", user_followers_count));
 		documento.add(new IntPoint("retweet_count",retweet_count));
 		documento.add(new StoredField("retweet_count", retweet_count));
 		documento.add(new TextField("text", text, Field.Store.YES));
@@ -243,7 +245,6 @@ public class IndiceInvertido {
 	*/
 	
 	//Metodo que devuelve un arreglo de documentos luego de buscar o consultar por un campo
-	//con valor que tiene espacio
 	public Document[] buscarDocumentosPorCampo(String campo, String valorCampo, int cantidadDocumentos){
 		Document[] resultados =null;
 		try{

@@ -63,7 +63,7 @@ set CMD_LINE_ARGS=%*
 :execute
 @rem Setup the command line
 
-set CLASSPATH=%APP_HOME%\lib\votweet-backend-master.jar;%APP_HOME%\lib\javaee-api-7.0.jar;%APP_HOME%\lib\javax.ws.rs-api-2.0.1.jar;%APP_HOME%\lib\mysql-connector-java-5.1.30.jar;%APP_HOME%\lib\javax.mail-1.5.0.jar;%APP_HOME%\lib\activation-1.1.jar
+set CLASSPATH=%APP_HOME%\lib\votweet-backend-master.jar;%APP_HOME%\lib\neo4j-java-driver-1.0.6.jar;%APP_HOME%\lib\lucene-queryparser-6.2.1.jar;%APP_HOME%\lib\lucene-core-6.2.1.jar;%APP_HOME%\lib\lucene-analyzers-common-6.2.1.jar;%APP_HOME%\lib\bson-3.4.2.jar;%APP_HOME%\lib\mongodb-driver-3.4.2.jar;%APP_HOME%\lib\mongodb-driver-core-3.4.2.jar;%APP_HOME%\lib\javaee-api-7.0.jar;%APP_HOME%\lib\javax.ws.rs-api-2.0.1.jar;%APP_HOME%\lib\mysql-connector-java-5.1.30.jar;%APP_HOME%\lib\javax.mail-1.5.0.jar;%APP_HOME%\lib\activation-1.1.jar
 
 @rem Execute votweet-backend-master
 "%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %VOTWEET_BACKEND_MASTER_OPTS%  -classpath "%CLASSPATH%" Main %CMD_LINE_ARGS%

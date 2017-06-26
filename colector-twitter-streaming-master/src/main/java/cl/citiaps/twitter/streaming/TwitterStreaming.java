@@ -3,6 +3,7 @@ package cl.citiaps.twitter.streaming;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -282,7 +283,7 @@ public class TwitterStreaming {
 			//Se crea, si no existe, la tabla "tweet" en la base de datos votweet
 			tweets = db.getCollection("tweet");
 			mysqlc.cargarKeywords();
-			ArrayList<String> cuentasOficiales = mysqlc.obtenerCuentasOficiales();
+			//ArrayList<String> cuentasOficiales = mysqlc.obtenerCuentasOficiales();
 			//long[] ids = obtenerIdsCandidatos(url, cuentasOficiales);
 			/*long[] ids = new long[cuentasOficiales.size()];
 			ids[0]=13623532;
@@ -305,7 +306,7 @@ public class TwitterStreaming {
 			new TwitterStreaming().init();
 		}
 		else{
-			System.out.println("Error en la conexión a MongoDB\n");
+			System.out.println("Error en la conexiï¿½n a MongoDB\n");
 		}
 	}
 	
@@ -356,8 +357,8 @@ public class TwitterStreaming {
 		//Se abre el archivo que contiene las ciudades de Chile
 		File archivo= new File("C:\\Users\\Abraham\\Desktop\\ciudades de Chile.txt");
 		try{
-			FileReader fr = new FileReader (archivo);
-			br = new BufferedReader(fr);
+			 br  = new BufferedReader(
+				    new InputStreamReader(new FileInputStream(archivo),"UTF-8"));
 		}
 		catch(Exception e){
 			System.out.println(e.getMessage());
@@ -415,7 +416,7 @@ public class TwitterStreaming {
 				update.put("city_location", cursorBusqueda.next().get("rt_fav_count"));
 				*/
 				//Hay que ver si era necesario especificar todos los parametros de nuevo
-				//En la actualización del documento
+				//En la actualizaciï¿½n del documento
 				tweets.updateMulti(tweet, new BasicDBObject("$set",update));
 				//Una vez que se actualiza se retorna para detener la ejecucion
 				return;

@@ -8,6 +8,7 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
@@ -19,7 +20,11 @@ import javax.persistence.Table;
 @SuppressWarnings("unused")
 @Entity
 @Table(name="opinion")
-@NamedQuery(name="Opinion.findAll", query="SELECT o FROM Opinion o")
+@NamedQueries({
+@NamedQuery(name="Opinion.findAll", query="SELECT o FROM Opinion o"),
+@NamedQuery(name="opiniones mas importantes acerca de un candidato", query="SELECT o FROM Opinion o WHERE o.cdtoId=:idCandidato AND o.opinionAutor!=:cuentaCandidato ORDER BY o.opinionRetweets DESC"),
+@NamedQuery(name="opiniones escritas por un usuario", query="SELECT o FROM Opinion o WHERE o.opinionAutor=:screenNameUsuario")
+})
 public class Opinion implements Serializable {
 	private static final long serialVersionUID = 1L;
 
