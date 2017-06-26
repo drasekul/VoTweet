@@ -1,9 +1,11 @@
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -26,13 +28,15 @@ public class ProcesamientoDatos {
 	public ProcesamientoDatos(){
 		cmsql= new ConexionMySQL("root", "speeddemon1");
 		indice= new IndiceInvertido();
-		//neo4j= new ConexionNeo4j("neo4j", "speeddemon1");
+		neo4j= new ConexionNeo4j("neo4j", "speeddemon1");
 		System.out.println("cantidad de documentos: "+String.valueOf(indice.cantidadDocumentos));
 		nodos= new JsonArray();
 		links= new JsonArray();
 		crearOpinionesMetricasTodosCandidatos();
+		//Se cierra la conexion a neo4j
+		neo4j.cerrarConexion();
 		//Una vez creadas todas las opiniones se escribe el archivo.json
-		escribirArchivoJson(nodos, links);
+		//escribirArchivoJson(nodos, links);
 	}
 	
 	public static void main(String[] args){
@@ -163,12 +167,27 @@ public class ProcesamientoDatos {
 	
 	
 	
-	//metodo que inserta todas las "opiniones" sobre un candidato a la base de datos mysql 
+	//metodo que inserta todas las "opiniones" sobre un candidato a la base de datos mysql
+	//AL BUSCAR LOS TWEETS POR PALABRAS CLAVES, SE PUEDE ANALIZAR 2 VECES EL MISMO TWEET
+	//Y COMO ALGUNAS VECES EL ANALISIS DEL SENTIMIENTO PUEDE SER RANDOM, YA QUE NO ES TOTALMENTE
+	//EFECTIVO, SE DEBEN VALIDAR LAS OPINIONES ANTES DE INSERTARLAS A MYSQL
+	//LO MISMO PARA LAS RELACIONES EN NEO4J
+	//LAS VALIDACIONES DEBEN REGIRSE POR LA IDEA DE QUE ES IMPOSIBLE
+	//QUE UN USUARIO ESCRIBA 2 TWEETS EN LA MISMA FECHA (TIMESTAMP)
+	//POR LO QUE LA COMBINACION AUTOR DEL TWEET-FECHA DE CREACION DEL TWEET ES UNICA
+	//PARA EL CASO DE LAS OPINIONES, SE DEBE CONSULTAR SI EXISTE EXACTAMENTE EL MISMO REGISTRO 
+	//YA QUE PUEDE SER QUE EL UNICO PARAMETRO QUE CAMBIE SEA EL DEL ID DEL CANDIDATO EN LA OPINION
+	//PUESTO QUE EN UN MISMO TWEET O OPINION SE PUEDE HABLAR DE M�S DE 1 CANDIDATO
+	//DEBIDO AL FACTOR DE AZAR EN EL ANALISIS DE SENTIMIENTO, ES IMPOSIBLE BORRAR LA INFO DE SOLO UNA
+	//BASE DE DATOS AL INICIAR EL DEPURADOR, SE DEBE HACER LO MISMO TANTO PARA MYSQL COMO PARA NEO4J
+	//EN ESTE CASO, SE USAN VALIDACIONES EN LAS INSERCIONES PARA QUE NO SE DUPLIQUEN LOS DATOS
+	//Y DE ESTAS FORMA, SE MANTENGA LA COHERENCIA DE LOS DATOS ENTRE LAS DOS BD
 	public void crearOpinionesCandidato(int idCandidato){
 		String nombreCandidato = cmsql.obtenerNombreCandidato(idCandidato);
-		agregarNodoJson(nombreCandidato,idCandidato,true);
+		//agregarNodoJson(nombreCandidato,idCandidato,true);
 		//Se obtiene la cuenta oficial de twitter del candidato con ese id
 		String cuentaCandidato = cmsql.obtenerCuentaCandidato(idCandidato);
+		neo4j.insertarNodoCandidato(nombreCandidato, cuentaCandidato);
 		//se obtienen todas las keywords del candidato por su id
 		ArrayList<String> keywordsCandidato = cmsql.obtenerKeywordsCandidato(idCandidato);
 		/*System.out.print("keys del candidato: "+ String.valueOf(idCandidato)+"\n");
@@ -184,7 +203,7 @@ public class ProcesamientoDatos {
 			//Se busca en el indice invertido los documentos que la contengan en el texto, para 
 			//crear una opinion en base a los tweets
 			Document[] resultados=null;
-			//Se consulta por la keyword dentrl del texto de un tweeet
+			//Se consulta por la keyword dentro del texto de un tweeet
 			resultados = indice.buscarDocumentosPorCampo("text", keyword,indice.cantidadDocumentos);
 			//Se leen los resultados de la busqueda
 			if(resultados!=null){
@@ -236,43 +255,31 @@ public class ProcesamientoDatos {
 						    for(int j=0; j < menciones.length; j++){
 						    	if(menciones[j].equals(cuentaCandidato)){
 						    		mencionaCandidato=true;
+						    		//si el autor del tweet opinion menciona al candidato, se agrega
+						    		// la relacion de la mencion a la base de datos neo4j
+						    		//Se crea el nodo Usuario, el nodo Candidato ya existe y se crea la relacion de que 
+						    		//el usuario menciona al candidato
+						    		neo4j.insertarNodoUsuario(autor, Integer.parseInt(opinion.get("user_followers_count")));
+						    		//String fech = fechaCreacion.toString();
+						    		neo4j.insertarRelacionMencionNodos(autor, cuentaCandidato, sentimiento, fechaCreacion.toString());
 						    		//hay que ver si el candidato respondio a la mencion, para eso hay
 						    		//que buscar en todos los tweets que ha realizado el candidato
 						    		//y ver si el in_reply_tostatus_id es igual al id de este tweet opinion
 						    		Document[] tweetsCandidato = indice.buscarDocumentosPorCampo("user_screen_name", cuentaCandidato,indice.cantidadDocumentos);
+						    		long idTweetOpinion= Long.parseLong(opinion.get("id"));
 						    		for(int n=0; n < tweetsCandidato.length; n++){
-						    			System.out.println("DOCUMENTOS ESCRITOS POR EL CANDIDATO: "+cuentaCandidato+": "+tweetsCandidato.length);
-						    			long idTweetOpinion= Long.parseLong(opinion.get("id"));
+						    			//System.out.println("DOCUMENTOS ESCRITOS POR EL CANDIDATO: "+cuentaCandidato+": "+tweetsCandidato.length);
 						    			long inReplyToStatusId= Long.parseLong(tweetsCandidato[n].get("in_reply_to_status_id"));
 						    			if(inReplyToStatusId==idTweetOpinion){
 						    				//Si son iguales, es que el candidato respondio al tweet opinion
 						    				respuestaCandidato=true;
 						    				Timestamp fechaRespuesta = Timestamp.valueOf(tweetsCandidato[n].get("created_at"));
-						    				//Aqui se crean los nodos candidato y usuario
-						    				//y su relacion de interaccion o mencion/respuesta
-						    				//y se guarda en neo4j
-						    				//autor es el nombre de usuario del que emite la opinion
-						    				//cuentaCandidato es el nombre de usuario del candidato en twitter
-						    				//sentimiento es el feel de la relacion
-						    				String sent=null;
-						    				if(sentimiento==1){
-						    					sent="positivo";
+						    				int sentimientoRespuesta = analizarSentimiento(tweetsCandidato[n].get("text"));
+						    				if(sentimientoRespuesta!= -1){
+						    					//Se agrega la relacion de que el nodo candidato respondio al nodo usuario
+							    				neo4j.insertarRelacionRespuestaNodos(autor, cuentaCandidato, sentimientoRespuesta, fechaRespuesta.toString());
 						    				}
-						    				else if(sentimiento==0){
-						    					sent="negativo";
-						    				}
-						    				else if(sentimiento==2){
-						    					sent="neutro";
-						    				}
-						    				agregarNodoJson(autor,17,false);
-						    				agregarLinkJson(autor,nombreCandidato,sent,true);
-						    				agregarLinkJson(autor,nombreCandidato,sent,false);
-						    				/*
-						    				String consulta = "CREATE (u:Usuario { nombreTwitter: '"+autor+"'}),(c:Candidato { nombreTwitter: '"+cuentaCandidato+"'}),"
-						    									+"(u)-[:MENCIONA {sentimiento :'"+sent+"', fecha : "+fechaCreacion+"}]->(c),"
-						    									+"(c)-[:RESPONDE {fecha : "+fechaRespuesta+"}]->(u)";
-						    				neo4j.consulta(consulta);
-						    				*/
+						    				
 						    			}
 						    		}
 						    	}
@@ -306,8 +313,8 @@ public class ProcesamientoDatos {
 		int cantidadPalabrasNegativas=0;
 		ArrayList<String> coincidencias = new ArrayList<String>();
 		try{
-			FileReader fr = new FileReader (archivo);
-			BufferedReader br = new BufferedReader(fr);
+			BufferedReader br  = new BufferedReader(
+				    new InputStreamReader(new FileInputStream(archivo),"UTF-8"));
 			String linea = br.readLine();
 			boolean espacios=false;
 			String palabraComparacion=null;
@@ -335,7 +342,11 @@ public class ProcesamientoDatos {
 					String[] palabrasTexto= text.split(" ");
 					for(int i=0; i < palabrasTexto.length; i++){
 						//System.out.println(palabrasTexto[i]);
-						if(palabrasTexto[i].equals(palabraComparacion)&& coincidencias.indexOf(palabraComparacion)==-1){
+						//Se valida que la palabra del texto no sea una mencion (que comience con @)
+						//en esta implementacion se considera que la palabra no contenga el @
+						//a futuro hay que implementar que la palabra comience con @, ya que
+						//puede no contar palabr@s asi en el analisis del sentimiento
+						if(palabrasTexto[i].equals(palabraComparacion)&& coincidencias.indexOf(palabraComparacion)==-1 && palabrasTexto[i].indexOf("@")==-1){
 							System.out.println("Se encontro la palabra: "+palabraComparacion+" en el texto");
 							coincidencias.add(palabraComparacion);
 							if(campos[1].equals("positive")){
@@ -369,9 +380,9 @@ public class ProcesamientoDatos {
 			System.out.println("palabras negativas: "+cantidadPalabrasNegativas);*/
 			//Una vez revisadas todas las palabras del archivo
 			//Si las cantidades de las palabras son 0, significa que no contenia ninguna de las palabras
-			//del lexico, por lo que se asigna un valor de sentimiento al azar entre 0 y 1
+			//del lexico, por lo que se asigna un valor de sentimiento al azar entre 0 y 2
 			if(cantidadPalabrasPositivas==0 && cantidadPalabrasNegativas==0){
-					int random = (int) Math.floor(Math.random()*(1-0+1)+0);  // Valor entre 0 y 1, ambos incluidos.
+					int random = (int) Math.floor(Math.random()*(2-0+1)+0);  // Valor entre 0 y 2, ambos incluidos.
 					br.close();
 					//return random;
 					return random;
@@ -442,6 +453,7 @@ public class ProcesamientoDatos {
 		return aprobacion;
 	}
 	
+	/*
 	public void agregarNodoJson(String nombre, int grupo, boolean esCandidato){
 		JsonObject nuevoNodo = new JsonObject();
 		nuevoNodo.addProperty("id",nombre);
@@ -486,13 +498,13 @@ public class ProcesamientoDatos {
             e.printStackTrace();
          }
 	}
-	
+	*/
 	public ArrayList<String[]> cargarRegionesCiudades(String nombreArchivo){
 		File archivo = new File(nombreArchivo);
 		ArrayList<String[]>regionesCiudades=null;
 		try {
-			FileReader fr = new FileReader (archivo);
-			BufferedReader br = new BufferedReader(fr);
+			BufferedReader br  = new BufferedReader(
+				    new InputStreamReader(new FileInputStream(archivo),"UTF-8"));
 			String linea = br.readLine();
 			ArrayList<String> auxRegiones = new ArrayList<String>();
 			ArrayList<String> auxCiudades = new ArrayList<String>();

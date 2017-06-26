@@ -24,14 +24,14 @@ public class UsuarioService {
 	Logger logger = Logger.getLogger(UsuarioService.class.getName());
 	
 	@GET
-	@Produces({"application/xml", "application/json"})
+	@Produces({"application/json;charset=utf-8"})
 	public List<Usuario> findAll(){
 		return usuarioFacadeEJB.findAll();
 	}
 	
 	@GET
 	@Path("{id}/borrar")
-	@Produces({"application/xml", "application/json"})
+	@Produces({"application/json;charset=utf-8"})
 	public String eliminarUsuarioId(@PathParam("id") Integer id){
 		String respuesta;
 		if(usuarioFacadeEJB.find(id)==null){
@@ -51,14 +51,14 @@ public class UsuarioService {
 	
 	@GET
     @Path("{id}")
-    @Produces({"application/xml", "application/json"})
+    @Produces({"application/json;charset=utf-8"})
     public Usuario find(@PathParam("id") Integer id) {
         return usuarioFacadeEJB.find(id);
     }
 	
 	
 	@POST
-    @Consumes({"application/xml", "application/json"})
+    @Consumes({"application/json;charset=utf-8"})
     public String create(Usuario entity) {
 		String respuesta = usuarioFacadeEJB.create(entity);
 		return respuesta;
@@ -67,7 +67,7 @@ public class UsuarioService {
 
     @PUT
     @Path("{id}")
-    @Consumes({"application/xml", "application/json"})
+    @Consumes({"application/json;charset=utf-8"})
     public void edit(@PathParam("id") Integer id, Usuario entity) {
     	entity.setUsrId(id.intValue());
         usuarioFacadeEJB.edit(entity);

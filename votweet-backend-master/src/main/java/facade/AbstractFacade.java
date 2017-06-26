@@ -14,6 +14,7 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 
 import model.CandidatoMetrica;
+import model.Opinion;
 import model.Usuario;
 /**
  * 
@@ -169,4 +170,22 @@ public abstract class AbstractFacade<T> {
     	return q.getResultList();
     }
     */
+    
+    @SuppressWarnings("unchecked")
+	public List<Opinion> encontrar20opinionesImportantesCandidato(int idCandidato, String cuentaCandidato){
+    	EntityManager em = getEntityManager();
+    	Query q = em.createNamedQuery("opiniones mas importantes acerca de un candidato");
+    	q.setParameter("idCandidato", idCandidato);
+    	q.setParameter("cuentaCandidato", cuentaCandidato);
+    	q.setMaxResults(20);
+    	return q.getResultList();
+    }
+    
+    @SuppressWarnings("unchecked")
+	public List<Opinion> opinionesEscritasPorUsuario(String screenNameUsuario){
+    	EntityManager em = getEntityManager();
+    	Query q = em.createNamedQuery("opiniones escritas por un usuario");
+    	q.setParameter("screenNameUsuario", screenNameUsuario);
+    	return q.getResultList();
+    }
 }
