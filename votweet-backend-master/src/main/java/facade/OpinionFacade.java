@@ -22,5 +22,7 @@ public interface OpinionFacade {
 	public List<Opinion> encontrar20opinionesImportantesCandidato(int idCandidato, String cuentaCandidato);
 	
 	public List<Opinion> opinionesEscritasPorUsuario(String screenNameUsuario);
+	
+	public List<Opinion> encontrar20opinionesInternacionalesImportantesCandidato(int idCandidato, String cuentaCandidato);
 	//public void eliminarOpinionId(Object id);
 }

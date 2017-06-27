@@ -30,9 +30,9 @@ public class Neo4j {
 	//retorna una lista de arreglos de string, que es nula si no existen relaciones de tipo mencion para el candidato
 	//en la que cada arreglo contiene las tuplas: 
 	//screenNameUser - followersUser - sentimientoMencion - fechaMencion
-	public ArrayList<String[]> obtenerDatosRelacionesMencion(String screenNameCandidato){
+	public ArrayList<String[]> obtenerDatosRelacionesMencion(String screenNameCandidato, int limite){
 		ArrayList<String[]> datosRelaciones =null;
-		String consulta ="match (u:Usuario)-[r:MENCIONA]->(c:Candidato) where c.screenName='"+screenNameCandidato+"' return u.followers as followersUser, u.screenName as screenNameUser, r.sentimiento as sentimiento, r.fecha as fecha ORDER BY u.followers DESC LIMIT 20";
+		String consulta ="match (u:Usuario)-[r:MENCIONA]->(c:Candidato) where c.screenName='"+screenNameCandidato+"' return u.followers as followersUser, u.screenName as screenNameUser, r.sentimiento as sentimiento, r.fecha as fecha ORDER BY u.followers DESC LIMIT "+limite;
 		StatementResult result = session.run(consulta);
 		if(result.hasNext()){
 			datosRelaciones= new ArrayList<String[]>();
@@ -58,9 +58,9 @@ public class Neo4j {
 		//retorna una lista de arreglos de string que es nula si no existen relaciones de tipo respuesta para el candidato
 		//en la que cada arreglo contiene las tuplas: 
 		//screenNameUser - followersUser - sentimientoMencion - fechaMencion
-		public ArrayList<String[]> obtenerDatosRelacionesRespuesta(String screenNameCandidato){
+		public ArrayList<String[]> obtenerDatosRelacionesRespuesta(String screenNameCandidato, int limite){
 			ArrayList<String[]> datosRelaciones =null;
-			String consulta ="match (c:Candidato)-[r:RESPONDE]->(u:Usuario) where c.screenName='"+screenNameCandidato+"' return u.followers as followersUser, u.screenName as screenNameUser, r.sentimiento as sentimiento, r.fecha as fecha ORDER BY u.followers DESC LIMIT 20";
+			String consulta ="match (c:Candidato)-[r:RESPONDE]->(u:Usuario) where c.screenName='"+screenNameCandidato+"' return u.followers as followersUser, u.screenName as screenNameUser, r.sentimiento as sentimiento, r.fecha as fecha ORDER BY u.followers DESC LIMIT "+limite;
 			StatementResult result = session.run(consulta);
 			if(result.hasNext()){
 				datosRelaciones= new ArrayList<String[]>();

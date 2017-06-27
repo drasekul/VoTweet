@@ -182,6 +182,16 @@ public abstract class AbstractFacade<T> {
     }
     
     @SuppressWarnings("unchecked")
+	public List<Opinion> encontrar20opinionesInternacionalesImportantesCandidato(int idCandidato, String cuentaCandidato){
+    	EntityManager em = getEntityManager();
+    	Query q = em.createNamedQuery("opiniones internacionales mas importantes acerca de un candidato");
+    	q.setParameter("idCandidato", idCandidato);
+    	q.setParameter("cuentaCandidato", cuentaCandidato);
+    	q.setMaxResults(20);
+    	return q.getResultList();
+    }
+    
+    @SuppressWarnings("unchecked")
 	public List<Opinion> opinionesEscritasPorUsuario(String screenNameUsuario){
     	EntityManager em = getEntityManager();
     	Query q = em.createNamedQuery("opiniones escritas por un usuario");
