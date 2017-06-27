@@ -22,8 +22,9 @@ import javax.persistence.Table;
 @Table(name="opinion")
 @NamedQueries({
 @NamedQuery(name="Opinion.findAll", query="SELECT o FROM Opinion o"),
-@NamedQuery(name="opiniones mas importantes acerca de un candidato", query="SELECT o FROM Opinion o WHERE o.cdtoId=:idCandidato AND o.opinionAutor!=:cuentaCandidato ORDER BY o.opinionRetweets DESC"),
-@NamedQuery(name="opiniones escritas por un usuario", query="SELECT o FROM Opinion o WHERE o.opinionAutor=:screenNameUsuario")
+@NamedQuery(name="opiniones mas importantes acerca de un candidato", query="SELECT o FROM Opinion o WHERE o.cdtoId=:idCandidato AND o.opinionAutor!=:cuentaCandidato AND (o.opinionPaisUbicacion='Chile' OR o.opinionPaisUbicacion='none') ORDER BY o.opinionRetweets DESC"),
+@NamedQuery(name="opiniones escritas por un usuario", query="SELECT o FROM Opinion o WHERE o.opinionAutor=:screenNameUsuario"),
+@NamedQuery(name="opiniones internacionales mas importantes acerca de un candidato", query="SELECT o FROM Opinion o WHERE o.cdtoId=:idCandidato AND o.opinionAutor!=:cuentaCandidato AND o.opinionPaisUbicacion='Extranjero' ORDER BY o.opinionRetweets DESC")
 })
 public class Opinion implements Serializable {
 	private static final long serialVersionUID = 1L;
